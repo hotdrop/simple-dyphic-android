@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,6 +9,9 @@ android {
     namespace = "jp.hotdrop.simpledyphic"
     compileSdk {
         version = release(36)
+    }
+    buildFeatures {
+        compose = true
     }
 
     defaultConfig {
@@ -20,6 +25,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug" // jp.hotdrop.simpledyphic.debug
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -29,12 +37,16 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions {
-        jvmTarget = "11"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
     }
+    jvmToolchain(21)
 }
 
 dependencies {
