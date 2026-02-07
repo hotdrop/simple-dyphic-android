@@ -43,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -64,6 +65,7 @@ import jp.hotdrop.simpledyphic.core.ui.ErrorContent
 import jp.hotdrop.simpledyphic.core.ui.LoadingContent
 import jp.hotdrop.simpledyphic.domain.model.DyphicId
 import jp.hotdrop.simpledyphic.domain.model.Record
+import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
@@ -367,4 +369,42 @@ private fun SummaryRow(
         text = "$label: $value",
         style = MaterialTheme.typography.bodyMedium
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CalendarScreenPreview() {
+    val selectedDate = LocalDate.of(2026, 2, 7)
+    val previewRecord = Record(
+        id = DyphicId.dateToId(selectedDate),
+        breakfast = "Toast",
+        lunch = "Pasta",
+        dinner = "Salad",
+        isToilet = true,
+        condition = "Good",
+        conditionMemo = "No issues",
+        stepCount = 8500,
+        healthKcal = 420.5,
+        ringfitKcal = 110.0,
+        ringfitKm = 2.3
+    )
+    val previewState = CalendarUiState(
+        isLoading = false,
+        errorMessage = null,
+        calendarStartMonth = YearMonth.of(2025, 1),
+        calendarEndMonth = YearMonth.of(2027, 12),
+        currentMonth = YearMonth.from(selectedDate),
+        selectedDate = selectedDate,
+        recordsByDate = mapOf(selectedDate to previewRecord)
+    )
+
+    SimpleDyphicTheme {
+        CalendarScreen(
+            uiState = previewState,
+            onRetry = {},
+            onMonthChanged = {},
+            onDateTap = {},
+            onEditSelectedDate = {}
+        )
+    }
 }

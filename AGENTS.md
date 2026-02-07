@@ -34,6 +34,8 @@
 ## 実装規約
 - 1ファイル肥大化を避け、責務ごとに分割する
 - `@Composable` は副作用を最小化し、状態は上位から渡す
+- 画面Composableを追加/更新する場合は、必ず`@Preview`を実装する
+- `@Preview`はViewModel非依存にする（ViewModelのモックは禁止）。`Route`と`Screen`を分離し、Previewは`Screen`を直接描画する
 - 画面状態は `sealed interface/class` か `data class` で明示する
 - 文字列/色/寸法はリソースまたはテーマで管理する
 - 例外処理は握りつぶさず、ユーザー向けメッセージとログを分離する
