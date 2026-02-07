@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -137,7 +138,9 @@ fun RecordEditScreen(
                 value = uiState.breakfast,
                 onValueChange = onBreakfastChanged,
                 label = { Text(text = stringResource(R.string.record_breakfast_label)) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("record_breakfast_input")
             )
             OutlinedTextField(
                 value = uiState.lunch,
@@ -267,7 +270,9 @@ fun RecordEditScreen(
             Button(
                 onClick = onSave,
                 enabled = !uiState.isSaving,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("record_save_button")
             ) {
                 if (uiState.isSaving) {
                     CircularProgressIndicator(
