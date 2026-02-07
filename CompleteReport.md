@@ -6,28 +6,27 @@
 
 ## 完了報告
 ### 1. 変更ファイル一覧
-- `app/src/main/java/jp/hotdrop/simpledyphic/SimpleDyphicApp.kt`
-- `app/src/main/java/jp/hotdrop/simpledyphic/feature/calendar/CalendarScreen.kt`
-- `app/src/main/java/jp/hotdrop/simpledyphic/feature/record/RecordEditScreen.kt`
-- `app/src/main/java/jp/hotdrop/simpledyphic/feature/record/RecordEditUiState.kt`
-- `app/src/main/java/jp/hotdrop/simpledyphic/feature/record/RecordEditViewModel.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/feature/settings/SettingsScreen.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/feature/settings/SettingsUiState.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/feature/settings/SettingsViewModel.kt`
 - `app/src/main/res/values/strings.xml`
-- `app/src/test/java/jp/hotdrop/simpledyphic/feature/record/RecordEditViewModelTest.kt`
+- `app/src/test/java/jp/hotdrop/simpledyphic/feature/settings/SettingsViewModelTest.kt`
 - `CompleteReport.md`
 
 ### 2. 実施内容（要点）
-- `Phase 4` のみ実施。
-- 記録編集画面を本実装へ拡張し、以下の入力をComposeで実装。
-  - 食事入力（朝/昼/夜）
-  - 体調選択（Bad/Normal/Good）
-  - 体調メモ
-  - 排便チェック（Switch）
-  - RingFit入力（kcal, km）
-- `RecordEditViewModel` の状態管理を拡張し、各入力更新・保存・エラー管理・`hasChanges` 判定を実装。
-- 数値入力バリデーションを保存時に追加（RingFit kcal/km が数値以外の場合は保存せずエラー表示）。
-- 「未保存で戻る」確認ダイアログを実装（システム戻る/ナビゲーション戻る両対応）。
-- 保存完了時の戻り値（更新有無 `Boolean`）を `RecordEditRoute -> SimpleDyphicApp -> CalendarRoute` に接続し、更新時のみ再読み込みする導線を実装。
-- `RecordEditScreen` に `Route` 分離を維持した `@Preview` を追加。
+- `Phase 5` のみ実施。
+- 設定画面をプレースホルダーから本実装へ移行し、以下の構成をComposeで実装。
+  - アカウント情報行
+  - バージョン/ライセンス行
+  - サインイン状態フラグに応じたUI分岐（未サインイン時: サインイン導線、サインイン時: バックアップ/復元の骨格 + サインアウト導線）
+- `SettingsUiState` を拡張し、`appVersion` / `isSignedIn` / `showLicenseDialog` などの画面状態を明示。
+- `SettingsViewModel` に以下を実装。
+  - アプリバージョンの取得（`PackageManager`）
+  - ライセンスダイアログ表示制御
+  - サインイン状態フラグの切替（実認証は未接続の骨格実装）
+- ライセンス表示として `AlertDialog` を実装し、設定画面から開閉できるよう接続。
+- `Route` と `Screen` を分離したまま、`SettingsScreen` の `@Preview` を2パターン（サインイン前/後）追加。
+- `SettingsViewModel` の状態遷移ユニットテストを新規追加。
 
 ### 3. 実行したテスト/確認結果
 - 実行: `./gradlew :app:assembleDebug`
@@ -35,12 +34,11 @@
 - 実行: `./gradlew :app:testDebugUnitTest`
   - 結果: **SUCCESS**
 - 追加テスト:
-  - `RecordEditViewModelTest.save_withValidInputs_updatesRepositoryAndReturnsTrue`
-  - `RecordEditViewModelTest.save_withInvalidRingfitInput_setsErrorAndDoesNotSave`
-  - `RecordEditViewModelTest.onBackRequested_withUnsavedInput_opensDiscardDialog`
-  - いずれも成功（入力更新・保存・バリデーション・未保存戻り状態遷移を確認）。
+  - `SettingsViewModelTest.signInAndSignOut_togglesSignedInState`
+  - `SettingsViewModelTest.onLicenseClickAndDismiss_updatesDialogState`
+  - いずれも成功（表示分岐フラグ切替・ライセンスダイアログ状態遷移を確認）。
 
 ### 4. 残課題・次Phaseへの申し送り
-- 体調選択UIは現状「選択のみ（未選択へ戻す操作なし）」のため、必要なら次PhaseでUXルールを明確化して拡張する。
-- RingFit入力のバリデーションメッセージはViewModel内の固定文言で実装しているため、将来的には文字列リソース化が望ましい。
-- 次Phase（`Phase 5`）では設定画面の本実装（バージョン表示・ライセンス表示・サインイン状態分岐骨格）に着手可能。
+- サインイン/サインアウトはUI分岐用フラグ切替の骨格実装のみで、Google認証連携は未接続。
+- バックアップ/復元は表示のみで、処理接続は未実装（`Phase 6` のFirebase連携で接続予定）。
+- ライセンス表示は現在ダイアログベースの簡易実装。必要に応じて次Phase以降でOSSライセンス画面連携へ拡張可能。
