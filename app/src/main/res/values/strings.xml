@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">simpledyphic</string>
+    <string name="tab_calendar">Calendar</string>
+    <string name="tab_settings">Settings</string>
+    <string name="common_loading">Loading...</string>
+    <string name="common_retry">Retry</string>
+    <string name="calendar_placeholder">Calendar screen (Phase 2 skeleton)</string>
+    <string name="settings_placeholder">Settings screen (Phase 2 skeleton)</string>
 </resources>
