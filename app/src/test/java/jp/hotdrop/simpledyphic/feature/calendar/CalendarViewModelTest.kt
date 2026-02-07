@@ -96,6 +96,10 @@ class CalendarViewModelTest {
         override suspend fun save(record: Record) {
             records[record.id] = record
         }
+
+        override suspend fun backup() = Unit
+
+        override suspend fun restore() = Unit
     }
 
     private class NoOpLogger : AppLogger {

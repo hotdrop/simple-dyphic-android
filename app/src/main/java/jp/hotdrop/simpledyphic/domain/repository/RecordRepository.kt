@@ -6,4 +6,6 @@ interface RecordRepository {
     suspend fun find(id: Int): Record
     suspend fun findAll(): List<Record>
     suspend fun save(record: Record)
+    suspend fun backup()
+    suspend fun restore()
 }

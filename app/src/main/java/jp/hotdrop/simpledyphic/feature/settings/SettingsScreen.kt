@@ -19,6 +19,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,21 +39,26 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.core.ui.ErrorContent
-import jp.hotdrop.simpledyphic.core.ui.LoadingContent
 import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     SettingsScreen(
         uiState = uiState,
         onRetry = viewModel::onRetry,
         onLicenseClick = viewModel::onLicenseClick,
         onLicenseDismiss = viewModel::onLicenseDismiss,
-        onSignInClick = viewModel::onSignInClick,
-        onSignOutClick = viewModel::onSignOutClick
+        onOperationMessageDismiss = viewModel::onOperationMessageDismiss,
+        onSignInClick = { scope.launch { viewModel.onSignInClick(context) } },
+        onSignOutClick = { scope.launch { viewModel.onSignOutClick() } },
+        onBackupClick = { scope.launch { viewModel.onBackupClick() } },
+        onRestoreClick = { scope.launch { viewModel.onRestoreClick() } }
     )
 }
 
@@ -60,12 +68,14 @@ fun SettingsScreen(
     onRetry: () -> Unit,
     onLicenseClick: () -> Unit,
     onLicenseDismiss: () -> Unit,
+    onOperationMessageDismiss: () -> Unit,
     onSignInClick: () -> Unit,
     onSignOutClick: () -> Unit,
+    onBackupClick: () -> Unit,
+    onRestoreClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when {
-        uiState.isLoading -> LoadingContent(modifier = modifier)
         uiState.errorMessage != null -> ErrorContent(
             message = uiState.errorMessage,
             onRetry = onRetry,
@@ -75,8 +85,11 @@ fun SettingsScreen(
         else -> SettingsContent(
             uiState = uiState,
             onLicenseClick = onLicenseClick,
+            onOperationMessageDismiss = onOperationMessageDismiss,
             onSignInClick = onSignInClick,
             onSignOutClick = onSignOutClick,
+            onBackupClick = onBackupClick,
+            onRestoreClick = onRestoreClick,
             modifier = modifier
         )
     }
@@ -111,8 +124,11 @@ fun SettingsScreen(
 private fun SettingsContent(
     uiState: SettingsUiState,
     onLicenseClick: () -> Unit,
+    onOperationMessageDismiss: () -> Unit,
     onSignInClick: () -> Unit,
     onSignOutClick: () -> Unit,
+    onBackupClick: () -> Unit,
+    onRestoreClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val accountName = uiState.accountName
@@ -140,6 +156,26 @@ private fun SettingsContent(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
+            if (uiState.isLoading) {
+                item {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+            }
+
+            uiState.operationMessage?.let { message ->
+                item {
+                    ListItem(
+                        headlineContent = { Text(text = message) },
+                        trailingContent = {
+                            OutlinedButton(onClick = onOperationMessageDismiss) {
+                                Text(text = stringResource(R.string.settings_message_close))
+                            }
+                        }
+                    )
+                    HorizontalDivider()
+                }
+            }
+
             item {
                 ListItem(
                     headlineContent = { Text(text = accountName) },
@@ -183,13 +219,16 @@ private fun SettingsContent(
                 item {
                     ListItem(
                         headlineContent = { Text(text = stringResource(R.string.settings_backup_title)) },
-                        supportingContent = { Text(text = stringResource(R.string.settings_phase6_placeholder)) },
+                        supportingContent = { Text(text = stringResource(R.string.settings_backup_summary)) },
                         leadingContent = {
                             Icon(
                                 imageVector = Icons.Outlined.Backup,
                                 contentDescription = null
                             )
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onBackupClick)
                     )
                     HorizontalDivider()
                 }
@@ -197,13 +236,16 @@ private fun SettingsContent(
                 item {
                     ListItem(
                         headlineContent = { Text(text = stringResource(R.string.settings_restore_title)) },
-                        supportingContent = { Text(text = stringResource(R.string.settings_phase6_placeholder)) },
+                        supportingContent = { Text(text = stringResource(R.string.settings_restore_summary)) },
                         leadingContent = {
                             Icon(
                                 imageVector = Icons.Outlined.SettingsBackupRestore,
                                 contentDescription = null
                             )
-                        }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onRestoreClick)
                     )
                     HorizontalDivider()
                 }
@@ -247,8 +289,11 @@ private fun SettingsScreenSignedOutPreview() {
             onRetry = {},
             onLicenseClick = {},
             onLicenseDismiss = {},
+            onOperationMessageDismiss = {},
             onSignInClick = {},
-            onSignOutClick = {}
+            onSignOutClick = {},
+            onBackupClick = {},
+            onRestoreClick = {}
         )
     }
 }
@@ -267,8 +312,11 @@ private fun SettingsScreenSignedInPreview() {
             onRetry = {},
             onLicenseClick = {},
             onLicenseDismiss = {},
+            onOperationMessageDismiss = {},
             onSignInClick = {},
-            onSignOutClick = {}
+            onSignOutClick = {},
+            onBackupClick = {},
+            onRestoreClick = {}
         )
     }
 }

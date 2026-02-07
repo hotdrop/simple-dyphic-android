@@ -130,6 +130,10 @@ class RecordEditViewModelTest {
             saveCount += 1
             records[record.id] = record
         }
+
+        override suspend fun backup() = Unit
+
+        override suspend fun restore() = Unit
     }
 
     private class NoOpLogger : AppLogger {

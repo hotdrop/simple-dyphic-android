@@ -21,7 +21,9 @@
     <string name="settings_sign_out">Sign out from Google</string>
     <string name="settings_backup_title">Backup</string>
     <string name="settings_restore_title">Restore</string>
-    <string name="settings_phase6_placeholder">Available in Phase 6 (Firebase integration).</string>
+    <string name="settings_backup_summary">Upload local records to Firestore.</string>
+    <string name="settings_restore_summary">Restore records from Firestore to this device.</string>
+    <string name="settings_message_close">Dismiss</string>
     <string name="record_edit_title">Record</string>
     <string name="record_edit_back">Back</string>
     <string name="record_edit_date">Date: %1$s</string>

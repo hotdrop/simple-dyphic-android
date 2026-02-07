@@ -7,6 +7,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jp.hotdrop.simpledyphic.core.log.AppLogger
+import jp.hotdrop.simpledyphic.domain.repository.AccountRepository
+import jp.hotdrop.simpledyphic.domain.repository.RecordRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,22 +17,23 @@ import kotlinx.coroutines.flow.update
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
-    private val appLogger: AppLogger
+    private val appLogger: AppLogger,
+    private val accountRepository: AccountRepository,
+    private val recordRepository: RecordRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
-        SettingsUiState(
-            appVersion = resolveAppVersion()
-        )
+        SettingsUiState(appVersion = resolveAppVersion())
     )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {
         appLogger.i("SettingsViewModel initialized")
+        syncCurrentAccount()
     }
 
     fun onRetry() {
-        _uiState.update { it.copy(isLoading = false, errorMessage = null) }
+        _uiState.update { it.copy(isLoading = false, errorMessage = null, operationMessage = null) }
     }
 
     fun onLicenseClick() {
@@ -41,25 +44,90 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(showLicenseDialog = false) }
     }
 
-    fun onSignInClick() {
-        appLogger.i("Sign-in skeleton action invoked")
+    fun onOperationMessageDismiss() {
+        _uiState.update { it.copy(operationMessage = null) }
+    }
+
+    suspend fun onSignInClick(context: Context) {
+        executeOperation(
+            actionName = "Sign-in",
+            successMessage = "Signed in successfully."
+        ) {
+            accountRepository.signInWithGoogle(context)
+            syncCurrentAccount()
+        }
+    }
+
+    suspend fun onSignOutClick() {
+        executeOperation(
+            actionName = "Sign-out",
+            successMessage = "Signed out successfully."
+        ) {
+            accountRepository.signOut()
+            syncCurrentAccount()
+        }
+    }
+
+    suspend fun onBackupClick() {
+        executeOperation(
+            actionName = "Backup",
+            successMessage = "Backup completed."
+        ) {
+            recordRepository.backup()
+        }
+    }
+
+    suspend fun onRestoreClick() {
+        executeOperation(
+            actionName = "Restore",
+            successMessage = "Restore completed."
+        ) {
+            recordRepository.restore()
+        }
+    }
+
+    private fun syncCurrentAccount() {
+        val account = accountRepository.currentAccount()
         _uiState.update {
             it.copy(
-                isSignedIn = true,
-                accountName = null,
-                accountEmail = null
+                isSignedIn = account != null,
+                accountName = account?.name,
+                accountEmail = account?.email
             )
         }
     }
 
-    fun onSignOutClick() {
-        appLogger.i("Sign-out skeleton action invoked")
+    private suspend fun executeOperation(
+        actionName: String,
+        successMessage: String,
+        action: suspend () -> Unit
+    ) {
         _uiState.update {
             it.copy(
-                isSignedIn = false,
-                accountName = null,
-                accountEmail = null
+                isLoading = true,
+                errorMessage = null,
+                operationMessage = null
             )
+        }
+        runCatching {
+            action()
+        }.onSuccess {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = null,
+                    operationMessage = successMessage
+                )
+            }
+        }.onFailure { error ->
+            appLogger.e("$actionName failed", error)
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = null,
+                    operationMessage = error.message ?: "$actionName failed."
+                )
+            }
         }
     }
 

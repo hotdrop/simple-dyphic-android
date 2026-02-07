@@ -15,4 +15,10 @@ interface RecordDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(record: RecordEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(records: List<RecordEntity>)
+
+    @Query("DELETE FROM records")
+    suspend fun deleteAll()
 }
