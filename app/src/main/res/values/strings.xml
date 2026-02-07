@@ -17,5 +17,16 @@
     <string name="record_breakfast_label">Breakfast</string>
     <string name="record_lunch_label">Lunch</string>
     <string name="record_dinner_label">Dinner</string>
+    <string name="record_condition_label">Condition</string>
+    <string name="record_condition_bad">Bad</string>
+    <string name="record_condition_normal">Normal</string>
+    <string name="record_condition_good">Good</string>
     <string name="record_condition_memo_label">Memo</string>
+    <string name="record_toilet_label">Toilet</string>
+    <string name="record_ringfit_kcal_label">RingFit kcal</string>
+    <string name="record_ringfit_km_label">RingFit km</string>
+    <string name="record_discard_title">Discard changes?</string>
+    <string name="record_discard_message">Changes are not saved. Return without saving?</string>
+    <string name="record_discard_confirm">Discard</string>
+    <string name="record_discard_cancel">Keep editing</string>
 </resources>

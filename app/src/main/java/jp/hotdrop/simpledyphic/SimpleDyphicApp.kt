@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
@@ -82,11 +83,18 @@ fun SimpleDyphicApp() {
             startDestination = TopLevelDestination.Calendar.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(TopLevelDestination.Calendar.route) {
+            composable(TopLevelDestination.Calendar.route) { backStackEntry ->
+                val recordUpdated by backStackEntry.savedStateHandle
+                    .getStateFlow(RecordEditViewModel.RESULT_UPDATED_ARG, false)
+                    .collectAsStateWithLifecycle()
                 CalendarRoute(
                     onNavigateToRecord = { recordId ->
                         navController.navigate("record/$recordId")
-                    }
+                    },
+                    recordUpdated = recordUpdated,
+                    onRecordUpdatedConsumed = {
+                        backStackEntry.savedStateHandle[RecordEditViewModel.RESULT_UPDATED_ARG] = false
+                    },
                 )
             }
             composable(TopLevelDestination.Settings.route) {
@@ -94,7 +102,12 @@ fun SimpleDyphicApp() {
             }
             composable("record/{${RecordEditViewModel.RECORD_ID_ARG}}") {
                 RecordEditRoute(
-                    onBack = { navController.popBackStack() }
+                    onBack = { updated ->
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set(RecordEditViewModel.RESULT_UPDATED_ARG, updated)
+                        navController.popBackStack()
+                    }
                 )
             }
         }

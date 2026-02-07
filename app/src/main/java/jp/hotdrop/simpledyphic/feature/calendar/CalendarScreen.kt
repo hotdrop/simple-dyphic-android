@@ -71,10 +71,19 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 @Composable
 fun CalendarRoute(
     onNavigateToRecord: (Int) -> Unit,
+    recordUpdated: Boolean,
+    onRecordUpdatedConsumed: () -> Unit,
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(recordUpdated) {
+        if (recordUpdated) {
+            viewModel.onResume()
+            onRecordUpdatedConsumed()
+        }
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
