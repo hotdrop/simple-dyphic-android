@@ -17,3 +17,4 @@ local.properties
 *.jks
 
 /flutter_app
+/sampleCodeCalendar
