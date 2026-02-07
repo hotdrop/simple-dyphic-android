@@ -1,19 +1,13 @@
 # このアプリについて
-Codex Appを使ってFlutterアプリをAndroidのComposeで移植してもらった。以下やり取り。
+Codex Appを使ってFlutterアプリをAndroidのComposeで移植してもらった。
 
-## 1. ルールファイルの作成
-私はFlutterでSimpleDyphicというアプリを開発したのですが、以下の理由により今後はAndroidアプリでJetpack Composeでアプリ開発をしていきたいのです。
-- 仕事でComposeを本格的に使用するようになったのでComposeを使いたい。
-- 仕事でFlutterを使わなくなったことやFlutterでの保守が難しくなった
-- Android端末でしか利用しない
-
-プロジェクト内の`flutter_app/`ディレクトリに既存のFlutterアプリのDartコードがあります。まずはこれをAndroidのJetpack Composeに移行する必要があります。
-この移行に必要なルール（`AGENTS.md`や`SKILL.md`）を作成してもらえますか？内容は日本語でお願いします。
-
-## 2. ライブラリ追加
-今Androidプロジェクトに必要最低限のライブラリを追加しました。Compose、Lifecycle、Navigation、Room（Flutterで使っているIsarというローカルストレージライブラリの移行先）、Hiltなどです。Firebaseやヘルスコネクトも必要ですがどのライブラリを入れれば良いのかわからないので、まずは最低限のライブラリを追加しました。おそらくルールに追加する必要があるのはDIの部分だと思うので、DIはHiltを使うようにして欲しいです。必要に応じて作成したファイルを更新してください。
-
---- ここまでで`AGENTS.md`と`SKILL.md`が追加 ---
-
-## 3. 移行計画策定
-では作業を開始して欲しいのですが、一度に全部移行すると失敗すると思うので移行の実装計画を立てて段階的に移行した方が成功すると思っています。あなたが一番やりやすい進め方で実装計画を立ててください。立てた実装計画は ActPlan.md ファイルにまとめてください。
+## 依頼手順
+1. ルールファイル`AGENTS.md`, `SKILL.md`作成
+   1. プロジェクト内の`flutter_app/`ディレクトリに既存のFlutterアプリのDartコードを入れる
+   2. 作成依頼をする
+2. ライブラリ追加（手動）
+   1. Android StudioでCompose, Lifecycle, Navigation, Room, Hiltを追加しビルドが通るように実施
+   2. ここは依存関係の解消や定義のやり取りをすると時間がかかるので自分で作業した
+3. 移行計画策定
+   1. 実装計画を立ててもらい`ActPlan.md`を作成
+4. 計画に沿って実行
