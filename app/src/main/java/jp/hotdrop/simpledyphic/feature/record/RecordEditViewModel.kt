@@ -6,11 +6,17 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import jp.hotdrop.simpledyphic.core.log.AppLogger
+import jp.hotdrop.simpledyphic.domain.model.DailyHealthSummary
 import jp.hotdrop.simpledyphic.domain.model.DyphicId
+import jp.hotdrop.simpledyphic.domain.model.HealthConnectStatus
 import jp.hotdrop.simpledyphic.domain.model.Record
+import jp.hotdrop.simpledyphic.domain.repository.HealthConnectRepository
 import jp.hotdrop.simpledyphic.domain.repository.RecordRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -19,11 +25,13 @@ import kotlinx.coroutines.launch
 class RecordEditViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val recordRepository: RecordRepository,
+    private val healthConnectRepository: HealthConnectRepository,
     private val appLogger: AppLogger
 ) : ViewModel() {
 
     private val recordId: Int = checkNotNull(savedStateHandle[RECORD_ID_ARG])
     private var baseRecord: Record = Record.createEmpty(DyphicId.idToDate(recordId))
+    private var pendingHealthSummary: DailyHealthSummary? = null
 
     private val _uiState = MutableStateFlow(
         RecordEditUiState(
@@ -31,6 +39,9 @@ class RecordEditViewModel @Inject constructor(
         )
     )
     val uiState: StateFlow<RecordEditUiState> = _uiState.asStateFlow()
+
+    private val _effects = MutableSharedFlow<RecordEditEffect>()
+    val effects: SharedFlow<RecordEditEffect> = _effects.asSharedFlow()
 
     init {
         loadRecord()
@@ -85,6 +96,89 @@ class RecordEditViewModel @Inject constructor(
         onClose()
     }
 
+    fun onHealthSyncRequested() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isHealthSyncing = true,
+                    healthConnectMessage = null,
+                    errorMessage = null
+                )
+            }
+
+            when (healthConnectRepository.getStatus()) {
+                HealthConnectStatus.AVAILABLE -> {
+                    if (healthConnectRepository.hasRequiredPermissions()) {
+                        importHealthSummary()
+                    } else {
+                        _uiState.update { it.copy(isHealthSyncing = false) }
+                        _effects.emit(
+                            RecordEditEffect.RequestHealthPermissions(
+                                permissions = healthConnectRepository.requiredPermissions()
+                            )
+                        )
+                    }
+                }
+
+                HealthConnectStatus.NOT_INSTALLED -> {
+                    _uiState.update {
+                        it.copy(
+                            isHealthSyncing = false,
+                            healthConnectMessage = HEALTH_CONNECT_NOT_INSTALLED_MESSAGE
+                        )
+                    }
+                }
+
+                HealthConnectStatus.UPDATE_REQUIRED -> {
+                    _uiState.update {
+                        it.copy(
+                            isHealthSyncing = false,
+                            healthConnectMessage = HEALTH_CONNECT_UPDATE_REQUIRED_MESSAGE
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun onHealthPermissionResult(grantedPermissions: Set<String>) {
+        val requiredPermissions = healthConnectRepository.requiredPermissions()
+        if (!grantedPermissions.containsAll(requiredPermissions)) {
+            _uiState.update {
+                it.copy(
+                    isHealthSyncing = false,
+                    healthConnectMessage = HEALTH_CONNECT_PERMISSION_DENIED_MESSAGE
+                )
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isHealthSyncing = true, healthConnectMessage = null) }
+            importHealthSummary()
+        }
+    }
+
+    fun confirmHealthOverwrite() {
+        val summary = pendingHealthSummary ?: return
+        applyHealthSummary(summary)
+        pendingHealthSummary = null
+    }
+
+    fun dismissHealthOverwriteDialog() {
+        pendingHealthSummary = null
+        _uiState.update {
+            it.copy(
+                showHealthOverwriteDialog = false,
+                healthConnectMessage = HEALTH_CONNECT_OVERWRITE_CANCELLED_MESSAGE
+            )
+        }
+    }
+
+    fun dismissHealthConnectMessage() {
+        _uiState.update { it.copy(healthConnectMessage = null) }
+    }
+
     fun save(onComplete: (Boolean) -> Unit) {
         viewModelScope.launch {
             val kcalInput = parseNumberInput(_uiState.value.ringfitKcalInput)
@@ -112,6 +206,8 @@ class RecordEditViewModel @Inject constructor(
                 condition = _uiState.value.conditionType?.rawValue,
                 conditionMemo = _uiState.value.conditionMemo.ifBlank { null },
                 isToilet = _uiState.value.isToilet,
+                stepCount = _uiState.value.stepCount,
+                healthKcal = _uiState.value.healthKcal,
                 ringfitKcal = kcal,
                 ringfitKm = km
             )
@@ -139,6 +235,53 @@ class RecordEditViewModel @Inject constructor(
         }
     }
 
+    private suspend fun importHealthSummary() {
+        runCatching {
+            healthConnectRepository.readDailySummary(_uiState.value.recordDate)
+        }.onSuccess { summary ->
+            val shouldAskOverwrite = shouldAskOverwrite(summary)
+            if (shouldAskOverwrite) {
+                pendingHealthSummary = summary
+                _uiState.update {
+                    it.copy(
+                        isHealthSyncing = false,
+                        showHealthOverwriteDialog = true
+                    )
+                }
+            } else {
+                applyHealthSummary(summary)
+            }
+        }.onFailure { error ->
+            appLogger.e("Failed to import Health Connect data", error)
+            _uiState.update {
+                it.copy(
+                    isHealthSyncing = false,
+                    healthConnectMessage = error.message ?: HEALTH_CONNECT_IMPORT_FAILED_MESSAGE
+                )
+            }
+        }
+    }
+
+    private fun shouldAskOverwrite(summary: DailyHealthSummary): Boolean {
+        val current = _uiState.value
+        val hasStepConflict = current.stepCount != null && current.stepCount != summary.stepCount
+        val hasKcalConflict = current.healthKcal != null && current.healthKcal != summary.burnedKcal
+        return hasStepConflict || hasKcalConflict
+    }
+
+    private fun applyHealthSummary(summary: DailyHealthSummary) {
+        updateInput {
+            it.copy(
+                stepCount = summary.stepCount,
+                healthKcal = summary.burnedKcal,
+                isHealthSyncing = false,
+                showHealthOverwriteDialog = false,
+                healthConnectMessage = HEALTH_CONNECT_IMPORTED_MESSAGE,
+                errorMessage = null
+            )
+        }
+    }
+
     private fun loadRecord() {
         viewModelScope.launch {
             runCatching {
@@ -154,6 +297,8 @@ class RecordEditViewModel @Inject constructor(
                         conditionType = ConditionType.fromRawValue(record.condition),
                         conditionMemo = record.conditionMemo.orEmpty(),
                         isToilet = record.isToilet,
+                        stepCount = record.stepCount,
+                        healthKcal = record.healthKcal,
                         ringfitKcalInput = record.ringfitKcal?.toString().orEmpty(),
                         ringfitKmInput = record.ringfitKm?.toString().orEmpty(),
                         hasChanges = false
@@ -171,6 +316,8 @@ class RecordEditViewModel @Inject constructor(
                             conditionType = null,
                             conditionMemo = "",
                             isToilet = false,
+                            stepCount = null,
+                            healthKcal = null,
                             ringfitKcalInput = "",
                             ringfitKmInput = "",
                             hasChanges = false
@@ -202,6 +349,8 @@ class RecordEditViewModel @Inject constructor(
             ConditionType.fromRawValue(baseRecord.condition) != uiState.conditionType ||
                 baseRecord.conditionMemo.orEmpty() != uiState.conditionMemo
         val isToiletChanged = baseRecord.isToilet != uiState.isToilet
+        val stepsChanged = baseRecord.stepCount != uiState.stepCount
+        val healthKcalChanged = baseRecord.healthKcal != uiState.healthKcal
         val kcalChanged = when (val parsed = parseNumberInput(uiState.ringfitKcalInput)) {
             is ParsedNumber.Invalid -> true
             is ParsedNumber.Valid -> parsed.value != baseRecord.ringfitKcal
@@ -211,7 +360,8 @@ class RecordEditViewModel @Inject constructor(
             is ParsedNumber.Valid -> parsed.value != baseRecord.ringfitKm
         }
 
-        return mealsChanged || conditionChanged || isToiletChanged || kcalChanged || kmChanged
+        return mealsChanged || conditionChanged || isToiletChanged || stepsChanged ||
+            healthKcalChanged || kcalChanged || kmChanged
     }
 
     private fun parseNumberInput(value: String): ParsedNumber {
@@ -226,11 +376,27 @@ class RecordEditViewModel @Inject constructor(
         data object Invalid : ParsedNumber
     }
 
+    sealed interface RecordEditEffect {
+        data class RequestHealthPermissions(val permissions: Set<String>) : RecordEditEffect
+    }
+
     companion object {
         const val RECORD_ID_ARG: String = "recordId"
         const val RESULT_UPDATED_ARG: String = "recordUpdated"
 
         private const val RINGFIT_KCAL_ERROR_MESSAGE: String = "RingFit kcal must be a number."
         private const val RINGFIT_KM_ERROR_MESSAGE: String = "RingFit km must be a number."
+        private const val HEALTH_CONNECT_NOT_INSTALLED_MESSAGE: String =
+            "Health Connect is not installed on this device."
+        private const val HEALTH_CONNECT_UPDATE_REQUIRED_MESSAGE: String =
+            "Health Connect requires an update before use."
+        private const val HEALTH_CONNECT_PERMISSION_DENIED_MESSAGE: String =
+            "Health Connect permission was denied."
+        private const val HEALTH_CONNECT_IMPORT_FAILED_MESSAGE: String =
+            "Failed to import Health Connect data."
+        private const val HEALTH_CONNECT_IMPORTED_MESSAGE: String =
+            "Imported step count and calories from Health Connect."
+        private const val HEALTH_CONNECT_OVERWRITE_CANCELLED_MESSAGE: String =
+            "Import cancelled. Existing values were kept."
     }
 }

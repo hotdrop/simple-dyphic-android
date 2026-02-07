@@ -14,8 +14,10 @@ import jp.hotdrop.simpledyphic.data.remote.auth.FirebaseAuthRemoteDataSource
 import jp.hotdrop.simpledyphic.data.remote.firestore.FirestoreRecordRemoteDataSource
 import jp.hotdrop.simpledyphic.data.remote.firestore.RecordRemoteDataSource
 import jp.hotdrop.simpledyphic.data.repository.impl.DefaultAccountRepository
+import jp.hotdrop.simpledyphic.data.repository.impl.DefaultHealthConnectRepository
 import jp.hotdrop.simpledyphic.data.repository.impl.LocalRecordRepository
 import jp.hotdrop.simpledyphic.domain.repository.AccountRepository
+import jp.hotdrop.simpledyphic.domain.repository.HealthConnectRepository
 import jp.hotdrop.simpledyphic.domain.repository.RecordRepository
 
 @Module
@@ -44,4 +46,10 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindRecordRemoteDataSource(impl: FirestoreRecordRemoteDataSource): RecordRemoteDataSource
+
+    @Binds
+    @Singleton
+    abstract fun bindHealthConnectRepository(
+        impl: DefaultHealthConnectRepository
+    ): HealthConnectRepository
 }

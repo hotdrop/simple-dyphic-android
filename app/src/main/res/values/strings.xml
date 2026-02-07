@@ -37,6 +37,15 @@
     <string name="record_condition_good">Good</string>
     <string name="record_condition_memo_label">Memo</string>
     <string name="record_toilet_label">Toilet</string>
+    <string name="record_health_section_title">Health Connect</string>
+    <string name="record_health_step_count_label">Step count</string>
+    <string name="record_health_kcal_label">Health kcal</string>
+    <string name="record_health_import_button">Import from Health Connect</string>
+    <string name="record_health_message_dismiss">Dismiss</string>
+    <string name="record_health_overwrite_title">Overwrite health data?</string>
+    <string name="record_health_overwrite_message">Current step count or calories differ. Overwrite with Health Connect values?</string>
+    <string name="record_health_overwrite_confirm">Overwrite</string>
+    <string name="record_health_overwrite_cancel">Keep current values</string>
     <string name="record_ringfit_kcal_label">RingFit kcal</string>
     <string name="record_ringfit_km_label">RingFit km</string>
     <string name="record_discard_title">Discard changes?</string>

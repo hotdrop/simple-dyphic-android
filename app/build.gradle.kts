@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.googleid)
     implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.androidx.health.connect.client)
     ksp(libs.androidx.room.compiler)
 
     // debug

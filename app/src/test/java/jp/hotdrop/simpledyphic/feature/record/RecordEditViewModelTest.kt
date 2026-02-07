@@ -3,7 +3,10 @@ package jp.hotdrop.simpledyphic.feature.record
 import androidx.lifecycle.SavedStateHandle
 import java.time.LocalDate
 import jp.hotdrop.simpledyphic.core.log.AppLogger
+import jp.hotdrop.simpledyphic.domain.model.DailyHealthSummary
+import jp.hotdrop.simpledyphic.domain.model.HealthConnectStatus
 import jp.hotdrop.simpledyphic.domain.model.Record
+import jp.hotdrop.simpledyphic.domain.repository.HealthConnectRepository
 import jp.hotdrop.simpledyphic.domain.repository.RecordRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,7 +42,8 @@ class RecordEditViewModelTest {
         val date = LocalDate.of(2026, 2, 7)
         val base = Record.createEmpty(date)
         val repository = FakeRecordRepository(mutableMapOf(base.id to base))
-        val viewModel = createViewModel(recordId = base.id, repository = repository)
+        val healthRepository = FakeHealthConnectRepository()
+        val viewModel = createViewModel(recordId = base.id, repository = repository, healthRepository)
         advanceUntilIdle()
 
         viewModel.onBreakfastChanged("Toast")
@@ -73,7 +77,8 @@ class RecordEditViewModelTest {
         val date = LocalDate.of(2026, 2, 7)
         val base = Record.createEmpty(date)
         val repository = FakeRecordRepository(mutableMapOf(base.id to base))
-        val viewModel = createViewModel(recordId = base.id, repository = repository)
+        val healthRepository = FakeHealthConnectRepository()
+        val viewModel = createViewModel(recordId = base.id, repository = repository, healthRepository)
         advanceUntilIdle()
 
         viewModel.onRingfitKcalChanged("abc")
@@ -92,7 +97,8 @@ class RecordEditViewModelTest {
         val date = LocalDate.of(2026, 2, 7)
         val base = Record.createEmpty(date)
         val repository = FakeRecordRepository(mutableMapOf(base.id to base))
-        val viewModel = createViewModel(recordId = base.id, repository = repository)
+        val healthRepository = FakeHealthConnectRepository()
+        val viewModel = createViewModel(recordId = base.id, repository = repository, healthRepository)
         advanceUntilIdle()
 
         viewModel.onConditionMemoChanged("memo")
@@ -104,12 +110,59 @@ class RecordEditViewModelTest {
         assertTrue(viewModel.uiState.value.showDiscardDialog)
     }
 
-    private fun createViewModel(recordId: Int, repository: RecordRepository): RecordEditViewModel {
+    @Test
+    fun onHealthPermissionResult_whenDenied_setsMessageAndDoesNotUpdateValues() = runTest(dispatcher) {
+        val date = LocalDate.of(2026, 2, 7)
+        val base = Record.createEmpty(date)
+        val repository = FakeRecordRepository(mutableMapOf(base.id to base))
+        val healthRepository = FakeHealthConnectRepository(
+            summary = DailyHealthSummary(stepCount = 6000, burnedKcal = 250.0)
+        )
+        val viewModel = createViewModel(recordId = base.id, repository = repository, healthRepository)
+        advanceUntilIdle()
+
+        viewModel.onHealthPermissionResult(emptySet())
+
+        assertEquals("Health Connect permission was denied.", viewModel.uiState.value.healthConnectMessage)
+        assertEquals(null, viewModel.uiState.value.stepCount)
+        assertEquals(null, viewModel.uiState.value.healthKcal)
+    }
+
+    @Test
+    fun healthSync_whenValuesExistAndDiffer_showsOverwriteDialog_thenApply() = runTest(dispatcher) {
+        val date = LocalDate.of(2026, 2, 7)
+        val base = Record.createEmpty(date).copy(stepCount = 1000, healthKcal = 100.0)
+        val repository = FakeRecordRepository(mutableMapOf(base.id to base))
+        val healthRepository = FakeHealthConnectRepository(
+            summary = DailyHealthSummary(stepCount = 8000, burnedKcal = 420.0)
+        )
+        val viewModel = createViewModel(recordId = base.id, repository = repository, healthRepository)
+        advanceUntilIdle()
+
+        viewModel.onHealthSyncRequested()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.showHealthOverwriteDialog)
+        viewModel.confirmHealthOverwrite()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.showHealthOverwriteDialog)
+        assertEquals(8000, viewModel.uiState.value.stepCount)
+        assertEquals(420.0, viewModel.uiState.value.healthKcal)
+        assertTrue(viewModel.uiState.value.hasChanges)
+    }
+
+    private fun createViewModel(
+        recordId: Int,
+        repository: RecordRepository,
+        healthRepository: HealthConnectRepository
+    ): RecordEditViewModel {
         return RecordEditViewModel(
             savedStateHandle = SavedStateHandle(
                 mapOf(RecordEditViewModel.RECORD_ID_ARG to recordId)
             ),
             recordRepository = repository,
+            healthConnectRepository = healthRepository,
             appLogger = NoOpLogger()
         )
     }
@@ -134,6 +187,28 @@ class RecordEditViewModelTest {
         override suspend fun backup() = Unit
 
         override suspend fun restore() = Unit
+    }
+
+    private class FakeHealthConnectRepository(
+        private val status: HealthConnectStatus = HealthConnectStatus.AVAILABLE,
+        private val permissions: Set<String> = setOf(STEPS_PERMISSION, KCAL_PERMISSION),
+        private val grantedPermissions: Set<String> = setOf(STEPS_PERMISSION, KCAL_PERMISSION),
+        private val summary: DailyHealthSummary = DailyHealthSummary(stepCount = 7777, burnedKcal = 333.3)
+    ) : HealthConnectRepository {
+        override fun requiredPermissions(): Set<String> = permissions
+
+        override suspend fun getStatus(): HealthConnectStatus = status
+
+        override suspend fun hasRequiredPermissions(): Boolean {
+            return grantedPermissions.containsAll(permissions)
+        }
+
+        override suspend fun readDailySummary(date: LocalDate): DailyHealthSummary = summary
+
+        companion object {
+            private const val STEPS_PERMISSION = "perm.steps"
+            private const val KCAL_PERMISSION = "perm.kcal"
+        }
     }
 
     private class NoOpLogger : AppLogger {

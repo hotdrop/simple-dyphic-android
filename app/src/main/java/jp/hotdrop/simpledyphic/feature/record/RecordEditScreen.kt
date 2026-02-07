@@ -1,6 +1,7 @@
 package jp.hotdrop.simpledyphic.feature.record
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,13 +24,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.health.connect.client.PermissionController
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import jp.hotdrop.simpledyphic.R
@@ -41,6 +45,21 @@ fun RecordEditRoute(
     viewModel: RecordEditViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = PermissionController.createRequestPermissionResultContract(),
+        onResult = viewModel::onHealthPermissionResult
+    )
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is RecordEditViewModel.RecordEditEffect.RequestHealthPermissions -> {
+                    permissionLauncher.launch(effect.permissions)
+                }
+            }
+        }
+    }
+
     RecordEditScreen(
         uiState = uiState,
         onBackRequest = { viewModel.onBackRequested { onBack(false) } },
@@ -54,7 +73,11 @@ fun RecordEditRoute(
         onIsToiletChanged = viewModel::onIsToiletChanged,
         onRingfitKcalChanged = viewModel::onRingfitKcalChanged,
         onRingfitKmChanged = viewModel::onRingfitKmChanged,
-        onSave = { viewModel.save(onBack) }
+        onSave = { viewModel.save(onBack) },
+        onHealthSyncRequest = viewModel::onHealthSyncRequested,
+        onConfirmHealthOverwrite = viewModel::confirmHealthOverwrite,
+        onDismissHealthOverwriteDialog = viewModel::dismissHealthOverwriteDialog,
+        onDismissHealthMessage = viewModel::dismissHealthConnectMessage
     )
 }
 
@@ -74,6 +97,10 @@ fun RecordEditScreen(
     onRingfitKcalChanged: (String) -> Unit,
     onRingfitKmChanged: (String) -> Unit,
     onSave: () -> Unit,
+    onHealthSyncRequest: () -> Unit,
+    onConfirmHealthOverwrite: () -> Unit,
+    onDismissHealthOverwriteDialog: () -> Unit,
+    onDismissHealthMessage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackRequest)
@@ -172,6 +199,50 @@ fun RecordEditScreen(
                 )
             }
 
+            Text(
+                text = stringResource(R.string.record_health_section_title),
+                style = MaterialTheme.typography.titleSmall
+            )
+            RecordValueRow(
+                label = stringResource(R.string.record_health_step_count_label),
+                value = uiState.stepCount?.toString().orEmpty().ifBlank { "-" }
+            )
+            RecordValueRow(
+                label = stringResource(R.string.record_health_kcal_label),
+                value = uiState.healthKcal?.let { String.format("%.1f", it) }.orEmpty().ifBlank { "-" }
+            )
+            Button(
+                onClick = onHealthSyncRequest,
+                enabled = !uiState.isHealthSyncing,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (uiState.isHealthSyncing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.padding(vertical = 2.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = stringResource(R.string.record_health_import_button))
+                }
+            }
+
+            uiState.healthConnectMessage?.let { message ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = onDismissHealthMessage) {
+                        Text(text = stringResource(R.string.record_health_message_dismiss))
+                    }
+                }
+            }
+
             OutlinedTextField(
                 value = uiState.ringfitKcalInput,
                 onValueChange = onRingfitKcalChanged,
@@ -227,6 +298,37 @@ fun RecordEditScreen(
             }
         )
     }
+
+    if (uiState.showHealthOverwriteDialog) {
+        AlertDialog(
+            onDismissRequest = onDismissHealthOverwriteDialog,
+            title = { Text(text = stringResource(R.string.record_health_overwrite_title)) },
+            text = { Text(text = stringResource(R.string.record_health_overwrite_message)) },
+            confirmButton = {
+                Button(onClick = onConfirmHealthOverwrite) {
+                    Text(text = stringResource(R.string.record_health_overwrite_confirm))
+                }
+            },
+            dismissButton = {
+                Button(onClick = onDismissHealthOverwriteDialog) {
+                    Text(text = stringResource(R.string.record_health_overwrite_cancel))
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun RecordValueRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = "$label: $value",
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = modifier
+    )
 }
 
 @Preview(showBackground = true)
@@ -241,6 +343,8 @@ private fun RecordEditScreenPreview() {
                 conditionType = ConditionType.NORMAL,
                 conditionMemo = "Stable condition",
                 isToilet = true,
+                stepCount = 8632,
+                healthKcal = 392.4,
                 ringfitKcalInput = "120",
                 ringfitKmInput = "2.5",
                 hasChanges = true
@@ -256,7 +360,11 @@ private fun RecordEditScreenPreview() {
             onIsToiletChanged = {},
             onRingfitKcalChanged = {},
             onRingfitKmChanged = {},
-            onSave = {}
+            onSave = {},
+            onHealthSyncRequest = {},
+            onConfirmHealthOverwrite = {},
+            onDismissHealthOverwriteDialog = {},
+            onDismissHealthMessage = {}
         )
     }
 }
