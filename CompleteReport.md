@@ -5,37 +5,38 @@
 以下の`完了報告`以降を編集してください。
 
 ## 完了報告
-### 1. 変更ファイル一覧（絶対パス）
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/MainActivity.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/SimpleDyphicApp.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/core/ui/CommonFeedback.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/calendar/CalendarScreen.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/calendar/CalendarUiState.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/calendar/CalendarViewModel.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/settings/SettingsScreen.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/settings/SettingsUiState.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/settings/SettingsViewModel.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/res/values/strings.xml`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/CompleteReport.md`
+### 1. 変更ファイル一覧
+- `simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/SimpleDyphicApp.kt`
+- `simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/calendar/CalendarScreen.kt`
+- `simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/calendar/CalendarUiState.kt`
+- `simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/calendar/CalendarViewModel.kt`
+- `simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/record/RecordEditScreen.kt`
+- `simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/record/RecordEditUiState.kt`
+- `simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/record/RecordEditViewModel.kt`
+- `simpledyphic/app/src/main/res/values/strings.xml`
+- `simpledyphic/app/src/test/java/jp/hotdrop/simpledyphic/feature/calendar/CalendarViewModelTest.kt`
+- `simpledyphic/CompleteReport.md`
 
 ### 2. 実施内容（要点）
-- `Phase 2` のみ実施。
-- `Navigation Compose` でトップレベルルート（`calendar` / `settings`）を構成し、`Scaffold + NavigationBar` による BottomNavigation を実装。
-- `MainActivity` の表示をプレースホルダー `HomeScreen` から `SimpleDyphicApp` に差し替え。
-- `feature/calendar` と `feature/settings` に `UiState(data class)` と `@HiltViewModel` を追加し、`StateFlow` を公開。
-- 各画面に `Route` Composable を追加し、`hiltViewModel()` + `collectAsStateWithLifecycle()` で `ViewModel + StateFlow` を接続。
-- 共通 UI としてローディング表示 (`LoadingContent`) / エラー表示 (`ErrorContent`) を追加。
+- `Phase 3` のみ実施。
+- `com.kizitonwose.calendar` を使った月表示カレンダーを `CalendarScreen` に実装し、日付セルにローカルDB記録の有無マーカー（ドット）を表示。
+- `CalendarViewModel` を `RecordRepository` 連携に置き換え、`findAll()` 結果を `recordsByDate` として `UiState` に保持。
+- 日付選択時に当日のサマリ（朝/昼/夜/メモ）を表示。
+- 日付タップで選択、同日再タップまたは「Edit selected day」押下で記録編集画面へ遷移する導線を追加。
+- `feature/record` に最小編集画面（メモ編集 + 保存）を追加し、保存後にカレンダーへ戻る動線を実装。
+- カレンダー画面復帰時（`ON_RESUME`）に再読み込みして、編集後の `refresh` 相当を実装。
 
 ### 3. 実行したテスト/確認結果
 - 実行: `./gradlew :app:assembleDebug`
   - 結果: **SUCCESS**
 - 実行: `./gradlew :app:testDebugUnitTest`
   - 結果: **SUCCESS**
-- 確認観点:
-  - `calendar` と `settings` の相互遷移（BottomNavigation）をコード上で実装済み。
-  - 両画面とも `ViewModel` の `StateFlow<UiState>` を画面に接続済みで、`Phase 2` 完了条件を満たす状態。
+- 追加テスト:
+  - `CalendarViewModelTest.init_loadsRecordsFromRepository`
+  - `CalendarViewModelTest.onResume_reloadsUpdatedRecords`
+  - いずれも成功（初期読み込みと再読み込み動作を確認）。
 
 ### 4. 残課題・次Phaseへの申し送り
-- 次は `Phase 3` として `com.kizitonwose.calendar` を用いたカレンダー本体表示とローカルDB連携を実装する。
-- 現在の `calendar/settings` は骨格実装のため、実データ表示・ドメイン操作は未着手。
-- 共通のローディング/エラー UI は導入済みのため、`Phase 3` 以降は各機能画面で同コンポーネントを継続利用する。
+- `Phase 4` で記録編集画面を本実装に拡張する（朝/昼/夜、体調、排便、RingFit 等の入力項目、未保存警告ダイアログ）。
+- 現在の編集画面は `Phase 3` 要件達成のための最小実装（メモ保存のみ）。
+- `Phase 3` 完了条件（カレンダー閲覧・選択体験、ローカルDB反映、編集後refresh）を満たす状態。

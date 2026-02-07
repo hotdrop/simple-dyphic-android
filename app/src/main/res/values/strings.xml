@@ -4,6 +4,18 @@
     <string name="tab_settings">Settings</string>
     <string name="common_loading">Loading...</string>
     <string name="common_retry">Retry</string>
-    <string name="calendar_placeholder">Calendar screen (Phase 2 skeleton)</string>
+    <string name="calendar_prev_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_summary_title">Summary: %1$s</string>
+    <string name="calendar_summary_empty">No record for this day.</string>
+    <string name="calendar_edit_selected_date">Edit selected day</string>
     <string name="settings_placeholder">Settings screen (Phase 2 skeleton)</string>
+    <string name="record_edit_title">Record</string>
+    <string name="record_edit_back">Back</string>
+    <string name="record_edit_date">Date: %1$s</string>
+    <string name="record_save">Save</string>
+    <string name="record_breakfast_label">Breakfast</string>
+    <string name="record_lunch_label">Lunch</string>
+    <string name="record_dinner_label">Dinner</string>
+    <string name="record_condition_memo_label">Memo</string>
 </resources>
