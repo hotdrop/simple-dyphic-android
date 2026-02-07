@@ -7,44 +7,41 @@
 ## 完了報告
 ### 1. 変更ファイル一覧（絶対パス）
 - `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/build.gradle.kts`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/AndroidManifest.xml`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/App.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/MainActivity.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/core/PackageMarker.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/core/log/AppLogger.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/core/log/LogcatAppLogger.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/data/local/PackageMarker.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/data/remote/PackageMarker.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/data/repository/PackageMarker.kt`
 - `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/di/AppModule.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/domain/PackageMarker.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/calendar/PackageMarker.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/record/PackageMarker.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/feature/settings/PackageMarker.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/ui/theme/Theme.kt`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/res/values/themes.xml`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/res/values-night/themes.xml`
-- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/google-services.json`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/di/DatabaseModule.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/domain/model/DyphicId.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/domain/model/Record.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/domain/repository/RecordRepository.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/AppDatabase.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/RecordDao.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/RecordEntity.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/data/local/source/RecordLocalDataSource.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/data/local/source/RoomRecordLocalDataSource.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/main/java/jp/hotdrop/simpledyphic/data/repository/impl/LocalRecordRepository.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/test/java/jp/hotdrop/simpledyphic/data/local/db/RecordDaoTest.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/app/src/test/java/jp/hotdrop/simpledyphic/data/repository/LocalRecordRepositoryTest.kt`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/gradle/libs.versions.toml`
+- `/Users/hotdrop/Desktop/MyWorkSpace/android/simpledyphic/CompleteReport.md`
 
 ### 2. 実施内容（要点）
-- `Phase 0`のみ実施。
-- `MainActivity`を新規作成し、`setContent`でCompose空ホーム（`SimpleDyphic Home`）を表示。
-- `App`を`Application`継承に修正し、`@HiltAndroidApp`を有効化。
-- `AndroidManifest.xml`に`android:name=".App"`と`MainActivity`の`LAUNCHER`設定を追加。
-- Hilt注入確認として`AppLogger`（`core/log`）と`AppModule`（`di`）を追加し、`MainActivity`で`@Inject`使用。
-- ログ方針の統一窓口として`AppLogger`/`LogcatAppLogger`を実装。
-- 指定パッケージ骨格を作成（`core/data/domain/feature/di`）。
-- ビルド成立のため、`google-services.json`を`app/google-services.json`に配置し、`debug`の`applicationIdSuffix`を外してJSONと一致させた。
+- `Phase 1`のみ実施。
+- `Record` と `DyphicId` を Kotlin 実装し、`yyyyMMdd` ベースの ID 変換を `DyphicId` に集約。
+- Room の `Entity/Dao/Database`（`records` テーブル）を追加。
+- Room ベースの `RecordLocalDataSource` 実装を追加し、`保存/単体取得/全件取得` を提供。
+- `RecordRepository` interface とローカル実装 `LocalRecordRepository` を追加。
+- Hilt モジュールを拡張し、`AppDatabase` / `RecordDao` / `RecordLocalDataSource` / `RecordRepository` を注入可能にした。
+- テスト実行のために unit test 依存（Robolectric / coroutines-test / androidx.test.core）を追加。
 
 ### 3. 実行したテスト/確認結果
-- 実行: `./gradlew :app:assembleDebug`
-  - 結果: **SUCCESS**
-  - 補足: Hilt生成タスク（`hiltAggregateDepsDebug` / `hiltJavaCompileDebug`）まで通過。
 - 実行: `./gradlew :app:testDebugUnitTest`
   - 結果: **SUCCESS**
+  - 補足: `RecordDaoTest` と `LocalRecordRepositoryTest` を含めて通過。
+- 実行: `./gradlew :app:assembleDebug`
+  - 結果: **SUCCESS**
 - 確認観点
-  - `Phase 0`完了条件の「ビルド可能な骨格」「Hilt注入動作」は満たしています。
+  - `Phase 1` 完了条件であるローカルでの `保存 / 単体取得 / 全件取得` と、DAO/Repository のユニットテスト通過を満たした。
 
 ### 4. 残課題・次Phaseへの申し送り
-- 次は`Phase 1`の範囲のみで、`Record`/`DyphicId`のKotlin実装、Room（Entity/DAO/Database）、Repository注入へ進む。
-- `debug`に`applicationIdSuffix`を再導入したい場合は、`jp.hotdrop.simpledyphic.debug`対応の`google-services.json`を別途用意してから戻すこと。
+- `Phase 2` で Navigation Compose と BottomNavigation の画面骨格を実装する。
+- `RecordRepository` は現時点でローカル実装のみ。リモート連携（Firebase/Auth/Firestore）は `Phase 6` まで実施しない。
+- `Record` の UI 向け補助ロジック（表示文字列・体調 enum 変換など）は、`Phase 3/4` の画面移植時に必要最小限で追加する。
