@@ -8,11 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -43,6 +41,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -186,7 +187,7 @@ private fun CalendarContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(vertical = 12.dp),
+            .padding(top = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(
@@ -293,6 +294,10 @@ private fun DayCell(
     val isSelected = day.date == selectedDate
     val isCurrentMonth = day.position == DayPosition.MonthDate
     val isToday = day.date == LocalDate.now()
+    val hasMarkers = record?.let {
+        it.isToilet || it.condition != null || (it.ringfitKcal ?: 0.0) > 0.0 ||
+            (it.ringfitKm ?: 0.0) > 0.0 || (it.stepCount ?: 0) >= 7000
+    } ?: false
     val textColor = when {
         isSelected -> MaterialTheme.colorScheme.onPrimary
         isToday -> MaterialTheme.colorScheme.onPrimary
@@ -309,42 +314,60 @@ private fun DayCell(
         modifier = Modifier
             .aspectRatio(1f)
             .padding(2.dp)
-            .clickable(enabled = isCurrentMonth) { onTap(day.date) },
+            .semantics { this.selected = isSelected }
+            .let { base ->
+                if (isCurrentMonth) {
+                    base.clickableWithRole { onTap(day.date) }
+                } else {
+                    base
+                }
+            },
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        if (isSelected || isToday) {
             Box(
                 modifier = Modifier
-                    .size(30.dp)
+                    .fillMaxSize(0.96f)
                     .clip(CircleShape)
-                    .background(backgroundColor),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = if (isCurrentMonth) day.date.dayOfMonth.toString() else "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = textColor
-                )
-            }
-            if (isCurrentMonth) {
-                RecordMarkers(record = record)
-            } else {
-                Spacer(modifier = Modifier.height(15.dp))
-            }
+                    .background(backgroundColor)
+            )
+        }
+
+        Text(
+            text = if (isCurrentMonth) day.date.dayOfMonth.toString() else "",
+            style = MaterialTheme.typography.bodyMedium,
+            color = textColor
+        )
+
+        if (isCurrentMonth && hasMarkers) {
+            RecordMarkers(
+                record = record,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            )
         }
     }
 }
 
 @Composable
-private fun RecordMarkers(record: Record?) {
-    Spacer(modifier = Modifier.height(2.dp))
+private fun RecordMarkers(
+    record: Record?,
+    modifier: Modifier = Modifier
+) {
     Row(
-        horizontalArrangement = Arrangement.Center,
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        MarkerSymbol(symbol = if (record?.isToilet == true) "\uD83D\uDCA9" else null)
-        MarkerSymbol(symbol = conditionSymbol(record?.condition))
-        ActivityMarker(record = record)
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            MarkerSymbol(symbol = if (record?.isToilet == true) "\uD83D\uDCA9" else null)
+        }
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            MarkerSymbol(symbol = conditionSymbol(record?.condition))
+        }
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            ActivityMarker(record = record)
+        }
     }
 }
 
@@ -396,6 +419,12 @@ private fun conditionSymbol(rawCondition: String?): String? {
         else -> null
     }
 }
+
+private fun Modifier.clickableWithRole(onClick: () -> Unit): Modifier =
+    clickable(
+        onClick = onClick,
+        role = Role.Button
+    )
 
 @Composable
 private fun SummaryCard(
