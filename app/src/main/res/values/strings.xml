@@ -44,7 +44,7 @@
     <string name="record_health_kcal_label">Health kcal</string>
     <string name="record_health_steps_value">%1$d 歩</string>
     <string name="record_health_kcal_value">%1$.1f kcal</string>
-    <string name="record_health_import_button">Import from Health Connect</string>
+    <string name="record_health_import_button">Open Health Connect settings</string>
     <string name="record_health_message_dismiss">Dismiss</string>
     <string name="record_health_overwrite_title">Overwrite health data?</string>
     <string name="record_health_overwrite_message">Current step count or calories differ. Overwrite with Health Connect values?</string>
