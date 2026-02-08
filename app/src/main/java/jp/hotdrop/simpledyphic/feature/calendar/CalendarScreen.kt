@@ -20,6 +20,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.SentimentSatisfied
+import androidx.compose.material.icons.rounded.SentimentVeryDissatisfied
+import androidx.compose.material.icons.rounded.SentimentVerySatisfied
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -39,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -363,7 +367,7 @@ private fun RecordMarkers(
             MarkerSymbol(symbol = if (record?.isToilet == true) "\uD83D\uDCA9" else null)
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            MarkerSymbol(symbol = conditionSymbol(record?.condition))
+            ConditionMarker(rawCondition = record?.condition)
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
             ActivityMarker(record = record)
@@ -411,12 +415,42 @@ private fun ActivityMarker(record: Record?) {
     }
 }
 
-private fun conditionSymbol(rawCondition: String?): String? {
-    return when (rawCondition) {
-        "良い" -> "\uD83D\uDE0A"
-        "普通" -> "\uD83D\uDE10"
-        "悪い" -> "\uD83D\uDE22"
-        else -> null
+@Composable
+private fun ConditionMarker(rawCondition: String?) {
+    val conditionType = CalendarConditionType.fromRawValue(rawCondition) ?: return
+    Icon(
+        imageVector = conditionType.icon,
+        contentDescription = null,
+        tint = conditionType.tint,
+        modifier = Modifier.size(15.dp)
+    )
+}
+
+private enum class CalendarConditionType(
+    val rawValue: String,
+    val icon: ImageVector,
+    val tint: Color
+) {
+    BAD(
+        rawValue = "悪い",
+        icon = Icons.Rounded.SentimentVeryDissatisfied,
+        tint = Color.Red
+    ),
+    NORMAL(
+        rawValue = "普通",
+        icon = Icons.Rounded.SentimentSatisfied,
+        tint = Color(0xFFFFA500)
+    ),
+    GOOD(
+        rawValue = "良い",
+        icon = Icons.Rounded.SentimentVerySatisfied,
+        tint = Color.Blue
+    );
+
+    companion object {
+        fun fromRawValue(value: String?): CalendarConditionType? {
+            return entries.firstOrNull { it.rawValue == value }
+        }
     }
 }
 
@@ -496,7 +530,7 @@ private fun CalendarScreenPreview() {
         lunch = "Pasta",
         dinner = "Salad",
         isToilet = true,
-        condition = "Good",
+        condition = "良い",
         conditionMemo = "No issues",
         stepCount = 8500,
         healthKcal = 420.5,
