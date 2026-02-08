@@ -3,6 +3,7 @@ package jp.hotdrop.simpledyphic.feature.record
 import androidx.lifecycle.SavedStateHandle
 import java.time.LocalDate
 import jp.hotdrop.simpledyphic.core.log.AppLogger
+import jp.hotdrop.simpledyphic.domain.model.ConditionType
 import jp.hotdrop.simpledyphic.domain.model.DailyHealthSummary
 import jp.hotdrop.simpledyphic.domain.model.HealthConnectStatus
 import jp.hotdrop.simpledyphic.domain.model.Record
@@ -64,7 +65,7 @@ class RecordEditViewModelTest {
         assertEquals("Toast", saved.breakfast)
         assertEquals("Pasta", saved.lunch)
         assertEquals("Soup", saved.dinner)
-        assertEquals("良い", saved.condition)
+        assertEquals(ConditionType.GOOD, saved.condition)
         assertEquals("Stable", saved.conditionMemo)
         assertTrue(saved.isToilet)
         assertEquals(120.0, saved.ringfitKcal)

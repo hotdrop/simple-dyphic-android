@@ -2,6 +2,8 @@ package jp.hotdrop.simpledyphic.data.local.db
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import jp.hotdrop.simpledyphic.data.mapper.toConditionType
+import jp.hotdrop.simpledyphic.data.mapper.toRawCondition
 import jp.hotdrop.simpledyphic.domain.model.Record
 
 @Entity(tableName = "records")
@@ -27,7 +29,7 @@ fun RecordEntity.toModel(): Record {
         lunch = lunch,
         dinner = dinner,
         isToilet = isToilet,
-        condition = condition,
+        condition = condition.toConditionType(),
         conditionMemo = conditionMemo,
         stepCount = stepCount,
         healthKcal = healthKcal,
@@ -43,7 +45,7 @@ fun Record.toEntity(): RecordEntity {
         lunch = lunch,
         dinner = dinner,
         isToilet = isToilet,
-        condition = condition,
+        condition = condition?.toRawCondition(),
         conditionMemo = conditionMemo,
         stepCount = stepCount,
         healthKcal = healthKcal,

@@ -3,6 +3,8 @@ package jp.hotdrop.simpledyphic.data.remote.firestore
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import javax.inject.Inject
+import jp.hotdrop.simpledyphic.data.mapper.toConditionType
+import jp.hotdrop.simpledyphic.data.mapper.toRawCondition
 import jp.hotdrop.simpledyphic.domain.model.Record
 import kotlinx.coroutines.tasks.await
 
@@ -25,7 +27,7 @@ class FirestoreRecordRemoteDataSource @Inject constructor(
                         lunch = getString(map, RECORD_LUNCH_FIELD),
                         dinner = getString(map, RECORD_DINNER_FIELD),
                         isToilet = getBoolean(map, RECORD_IS_TOILET_FIELD),
-                        condition = getString(map, RECORD_CONDITION_FIELD),
+                        condition = getString(map, RECORD_CONDITION_FIELD).toConditionType(),
                         conditionMemo = getString(map, RECORD_CONDITION_MEMO_FIELD),
                         stepCount = getInt(map, RECORD_STEP_COUNT_FIELD),
                         healthKcal = getDouble(map, RECORD_HEALTH_KCAL_FIELD),
@@ -44,7 +46,7 @@ class FirestoreRecordRemoteDataSource @Inject constructor(
             record.lunch?.takeIf { it.isNotBlank() }?.let { map[RECORD_LUNCH_FIELD] = it }
             record.dinner?.takeIf { it.isNotBlank() }?.let { map[RECORD_DINNER_FIELD] = it }
             map[RECORD_IS_TOILET_FIELD] = record.isToilet
-            record.condition?.takeIf { it.isNotBlank() }?.let { map[RECORD_CONDITION_FIELD] = it }
+            record.condition?.toRawCondition()?.let { map[RECORD_CONDITION_FIELD] = it }
             record.conditionMemo?.takeIf { it.isNotBlank() }?.let { map[RECORD_CONDITION_MEMO_FIELD] = it }
             record.stepCount?.let { map[RECORD_STEP_COUNT_FIELD] = it }
             record.healthKcal?.let { map[RECORD_HEALTH_KCAL_FIELD] = it }

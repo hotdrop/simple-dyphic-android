@@ -1,18 +1,7 @@
 package jp.hotdrop.simpledyphic.feature.record
 
 import java.time.LocalDate
-
-enum class ConditionType(val rawValue: String) {
-    BAD("悪い"),
-    NORMAL("普通"),
-    GOOD("良い");
-
-    companion object {
-        fun fromRawValue(value: String?): ConditionType? {
-            return entries.firstOrNull { it.rawValue == value }
-        }
-    }
-}
+import jp.hotdrop.simpledyphic.domain.model.ConditionType
 
 data class RecordEditUiState(
     val recordDate: LocalDate = LocalDate.now(),

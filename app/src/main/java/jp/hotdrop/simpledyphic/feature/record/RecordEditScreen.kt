@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,6 +39,8 @@ import androidx.health.connect.client.PermissionController
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import jp.hotdrop.simpledyphic.R
+import jp.hotdrop.simpledyphic.core.ui.ConditionIcon
+import jp.hotdrop.simpledyphic.domain.model.ConditionType
 import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
 
 @Composable
@@ -168,13 +171,22 @@ fun RecordEditScreen(
                         selected = uiState.conditionType == type,
                         onClick = { onConditionTypeChanged(type) },
                         label = {
-                            Text(
-                                when (type) {
-                                    ConditionType.BAD -> stringResource(R.string.record_condition_bad)
-                                    ConditionType.NORMAL -> stringResource(R.string.record_condition_normal)
-                                    ConditionType.GOOD -> stringResource(R.string.record_condition_good)
-                                }
-                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                ConditionIcon(
+                                    type = type,
+                                    selected = uiState.conditionType == type,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    when (type) {
+                                        ConditionType.BAD -> stringResource(R.string.record_condition_bad)
+                                        ConditionType.NORMAL -> stringResource(R.string.record_condition_normal)
+                                        ConditionType.GOOD -> stringResource(R.string.record_condition_good)
+                                    }
+                                )
+                            }
                         }
                     )
                 }

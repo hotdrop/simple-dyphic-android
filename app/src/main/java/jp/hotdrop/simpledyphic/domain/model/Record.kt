@@ -8,7 +8,7 @@ data class Record(
     val lunch: String?,
     val dinner: String?,
     val isToilet: Boolean,
-    val condition: String?,
+    val condition: ConditionType?,
     val conditionMemo: String?,
     val stepCount: Int?,
     val healthKcal: Double?,

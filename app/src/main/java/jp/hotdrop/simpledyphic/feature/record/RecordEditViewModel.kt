@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import jp.hotdrop.simpledyphic.core.log.AppLogger
+import jp.hotdrop.simpledyphic.domain.model.ConditionType
 import jp.hotdrop.simpledyphic.domain.model.DailyHealthSummary
 import jp.hotdrop.simpledyphic.domain.model.DyphicId
 import jp.hotdrop.simpledyphic.domain.model.HealthConnectStatus
@@ -203,7 +204,7 @@ class RecordEditViewModel @Inject constructor(
                 breakfast = _uiState.value.breakfast.ifBlank { null },
                 lunch = _uiState.value.lunch.ifBlank { null },
                 dinner = _uiState.value.dinner.ifBlank { null },
-                condition = _uiState.value.conditionType?.rawValue,
+                condition = _uiState.value.conditionType,
                 conditionMemo = _uiState.value.conditionMemo.ifBlank { null },
                 isToilet = _uiState.value.isToilet,
                 stepCount = _uiState.value.stepCount,
@@ -294,7 +295,7 @@ class RecordEditViewModel @Inject constructor(
                         breakfast = record.breakfast.orEmpty(),
                         lunch = record.lunch.orEmpty(),
                         dinner = record.dinner.orEmpty(),
-                        conditionType = ConditionType.fromRawValue(record.condition),
+                        conditionType = record.condition,
                         conditionMemo = record.conditionMemo.orEmpty(),
                         isToilet = record.isToilet,
                         stepCount = record.stepCount,
@@ -346,7 +347,7 @@ class RecordEditViewModel @Inject constructor(
                 baseRecord.lunch.orEmpty() != uiState.lunch ||
                 baseRecord.dinner.orEmpty() != uiState.dinner
         val conditionChanged =
-            ConditionType.fromRawValue(baseRecord.condition) != uiState.conditionType ||
+            baseRecord.condition != uiState.conditionType ||
                 baseRecord.conditionMemo.orEmpty() != uiState.conditionMemo
         val isToiletChanged = baseRecord.isToilet != uiState.isToilet
         val stepsChanged = baseRecord.stepCount != uiState.stepCount
