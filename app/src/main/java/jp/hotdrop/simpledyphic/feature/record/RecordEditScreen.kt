@@ -135,6 +135,7 @@ fun RecordEditScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(text = stringResource(R.string.record_edit_title)) },
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 navigationIcon = {
                     IconButton(onClick = onBackRequest) {
                         Icon(
