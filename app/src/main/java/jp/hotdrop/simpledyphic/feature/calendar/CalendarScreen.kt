@@ -153,10 +153,13 @@ private fun CalendarContent(
     val firstDayOfWeek = DayOfWeek.SUNDAY
     val weekDays = remember(firstDayOfWeek) { daysOfWeek(firstDayOfWeek) }
     val monthFormatter = remember { DateTimeFormatter.ofPattern("yyyy年M月", locale) }
+    val initialVisibleMonth = remember(uiState.calendarStartMonth, uiState.calendarEndMonth) {
+        uiState.currentMonth
+    }
     val calendarState = rememberCalendarState(
         startMonth = uiState.calendarStartMonth,
         endMonth = uiState.calendarEndMonth,
-        firstVisibleMonth = uiState.currentMonth,
+        firstVisibleMonth = initialVisibleMonth,
         firstDayOfWeek = firstDayOfWeek
     )
     var pendingMonth by remember { mutableStateOf<YearMonth?>(null) }
@@ -168,7 +171,8 @@ private fun CalendarContent(
     }
 
     LaunchedEffect(uiState.currentMonth) {
-        if (calendarState.firstVisibleMonth.yearMonth != uiState.currentMonth) {
+        val visibleMonth = calendarState.firstVisibleMonth.yearMonth
+        if (pendingMonth == null && visibleMonth != uiState.currentMonth) {
             pendingMonth = uiState.currentMonth
         }
     }
@@ -255,7 +259,13 @@ private fun CalendarContent(
                             day = day,
                             selectedDate = uiState.selectedDate,
                             record = uiState.recordsByDate[day.date],
-                            onTap = onDateTap
+                            onTap = { date ->
+                                val monthOfDate = YearMonth.from(date)
+                                if (monthOfDate != uiState.currentMonth) {
+                                    pendingMonth = monthOfDate
+                                }
+                                onDateTap(date)
+                            }
                         )
                     }
                 )
