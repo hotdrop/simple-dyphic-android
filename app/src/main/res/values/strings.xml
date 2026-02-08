@@ -24,7 +24,7 @@
     <string name="settings_backup_summary">Upload local records to Firestore.</string>
     <string name="settings_restore_summary">Restore records from Firestore to this device.</string>
     <string name="settings_message_close">Dismiss</string>
-    <string name="record_edit_title">Record</string>
+    <string name="record_edit_title">体調記録</string>
     <string name="record_edit_back">Back</string>
     <string name="record_edit_date">Date: %1$s</string>
     <string name="record_save">Save</string>
@@ -36,10 +36,14 @@
     <string name="record_condition_normal">Normal</string>
     <string name="record_condition_good">Good</string>
     <string name="record_condition_memo_label">Memo</string>
+    <string name="record_condition_memo_edit_label">体調メモ</string>
     <string name="record_toilet_label">Toilet</string>
+    <string name="record_toilet_done">💩 排便した</string>
     <string name="record_health_section_title">Health Connect</string>
     <string name="record_health_step_count_label">Step count</string>
     <string name="record_health_kcal_label">Health kcal</string>
+    <string name="record_health_steps_value">%1$d 歩</string>
+    <string name="record_health_kcal_value">%1$.1f kcal</string>
     <string name="record_health_import_button">Import from Health Connect</string>
     <string name="record_health_message_dismiss">Dismiss</string>
     <string name="record_health_overwrite_title">Overwrite health data?</string>
@@ -48,6 +52,8 @@
     <string name="record_health_overwrite_cancel">Keep current values</string>
     <string name="record_ringfit_kcal_label">RingFit kcal</string>
     <string name="record_ringfit_km_label">RingFit km</string>
+    <string name="record_ringfit_kcal_short_label">kcal</string>
+    <string name="record_ringfit_km_short_label">km</string>
     <string name="record_discard_title">Discard changes?</string>
     <string name="record_discard_message">Changes are not saved. Return without saving?</string>
     <string name="record_discard_confirm">Discard</string>
