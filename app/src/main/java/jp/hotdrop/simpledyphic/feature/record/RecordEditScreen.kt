@@ -365,7 +365,7 @@ private fun MealCard(
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(72.dp),
+                    .size(32.dp),
                 contentScale = ContentScale.Fit
             )
             OutlinedTextField(
