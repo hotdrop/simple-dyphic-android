@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">simpledyphic</string>
+    <string name="app_name">体調管理2</string>
     <string name="tab_calendar">Calendar</string>
     <string name="tab_settings">Settings</string>
     <string name="common_loading">Loading...</string>
