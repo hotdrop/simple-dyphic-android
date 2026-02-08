@@ -1,7 +1,6 @@
 package jp.hotdrop.simpledyphic.feature.calendar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,14 +14,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -146,10 +148,10 @@ private fun CalendarContent(
     onEditSelectedDate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val locale = Locale.getDefault()
+    val locale = Locale.JAPAN
     val firstDayOfWeek = DayOfWeek.SUNDAY
     val weekDays = remember(firstDayOfWeek) { daysOfWeek(firstDayOfWeek) }
-    val monthFormatter = remember { DateTimeFormatter.ofPattern("yyyy MMM", locale) }
+    val monthFormatter = remember { DateTimeFormatter.ofPattern("yyyy年M月", locale) }
     val calendarState = rememberCalendarState(
         startMonth = uiState.calendarStartMonth,
         endMonth = uiState.calendarEndMonth,
@@ -248,7 +250,7 @@ private fun CalendarContent(
                         DayCell(
                             day = day,
                             selectedDate = uiState.selectedDate,
-                            hasRecord = uiState.recordsByDate.containsKey(day.date),
+                            record = uiState.recordsByDate[day.date],
                             onTap = onDateTap
                         )
                     }
@@ -260,7 +262,9 @@ private fun CalendarContent(
             selectedDate = uiState.selectedDate,
             record = uiState.selectedRecord,
             onEditSelectedDate = onEditSelectedDate,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
         )
     }
 }
@@ -269,53 +273,97 @@ private fun CalendarContent(
 private fun DayCell(
     day: CalendarDay,
     selectedDate: LocalDate,
-    hasRecord: Boolean,
+    record: Record?,
     onTap: (LocalDate) -> Unit
 ) {
     val isSelected = day.date == selectedDate
     val isCurrentMonth = day.position == DayPosition.MonthDate
+    val isToday = day.date == LocalDate.now()
     val textColor = when {
-        !isCurrentMonth -> MaterialTheme.colorScheme.outline
         isSelected -> MaterialTheme.colorScheme.onPrimary
+        isToday -> MaterialTheme.colorScheme.onPrimary
+        !isCurrentMonth -> Color.Transparent
         else -> MaterialTheme.colorScheme.onSurface
     }
-    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+    val backgroundColor = when {
+        isSelected -> Color(0xFF66CCFF)
+        isToday -> MaterialTheme.colorScheme.primary
+        else -> Color.Transparent
+    }
 
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .padding(2.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(backgroundColor)
-            .border(
-                width = if (isSelected) 0.dp else 1.dp,
-                color = if (isCurrentMonth) MaterialTheme.colorScheme.outlineVariant else Color.Transparent,
-                shape = RoundedCornerShape(12.dp)
-            )
             .clickable(enabled = isCurrentMonth) { onTap(day.date) },
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = day.date.dayOfMonth.toString(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = textColor
-            )
-            Spacer(modifier = Modifier.height(2.dp))
             Box(
                 modifier = Modifier
-                    .size(6.dp)
+                    .size(30.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (hasRecord) {
-                            if (isSelected) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.primary
-                        } else {
-                            Color.Transparent
-                        }
-                    )
+                    .background(backgroundColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (isCurrentMonth) day.date.dayOfMonth.toString() else "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor
+                )
+            }
+            if (isCurrentMonth) {
+                RecordMarkers(record = record)
+            } else {
+                Spacer(modifier = Modifier.height(15.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecordMarkers(record: Record?) {
+    Spacer(modifier = Modifier.height(2.dp))
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        MarkerSymbol(symbol = if (record?.isToilet == true) "\uD83D\uDCA9" else null)
+        MarkerSymbol(symbol = conditionSymbol(record?.condition))
+        MarkerSymbol(symbol = activitySymbol(record))
+    }
+}
+
+@Composable
+private fun MarkerSymbol(symbol: String?) {
+    Box(
+        modifier = Modifier.size(15.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (symbol != null) {
+            Text(
+                text = symbol,
+                style = MaterialTheme.typography.labelSmall
             )
         }
+    }
+}
+
+private fun conditionSymbol(rawCondition: String?): String? {
+    return when (rawCondition) {
+        "良い" -> "\uD83D\uDE0A"
+        "普通" -> "\uD83D\uDE10"
+        "悪い" -> "\uD83D\uDE22"
+        else -> null
+    }
+}
+
+private fun activitySymbol(record: Record?): String? {
+    if (record == null) return null
+    return when {
+        (record.ringfitKcal ?: 0.0) > 0.0 || (record.ringfitKm ?: 0.0) > 0.0 -> "\uD83C\uDFC3"
+        (record.stepCount ?: 0) >= 7000 -> "\uD83D\uDEB6"
+        else -> null
     }
 }
 
@@ -327,41 +375,53 @@ private fun SummaryCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onEditSelectedDate),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = stringResource(R.string.calendar_summary_title, selectedDate.toString()),
-                style = MaterialTheme.typography.titleMedium
+                text = selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd(E)", Locale.JAPAN)),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
             )
+            HorizontalDivider()
             if (record == null) {
                 Text(
-                    text = stringResource(R.string.calendar_summary_empty),
+                    text = "この日の記録は未登録です。\nここをタップして記録しましょう。",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                SummaryRow(
-                    label = stringResource(R.string.record_breakfast_label),
-                    value = record.breakfast.orEmpty().ifBlank { "-" }
-                )
-                SummaryRow(
-                    label = stringResource(R.string.record_lunch_label),
-                    value = record.lunch.orEmpty().ifBlank { "-" }
-                )
-                SummaryRow(
-                    label = stringResource(R.string.record_dinner_label),
-                    value = record.dinner.orEmpty().ifBlank { "-" }
-                )
-                SummaryRow(
-                    label = stringResource(R.string.record_condition_memo_label),
-                    value = record.conditionMemo.orEmpty().ifBlank { "-" }
-                )
+                val memo = record.conditionMemo.orEmpty()
+                if (memo.isNotBlank()) {
+                    Text(
+                        text = "【体調メモ】",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = memo,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 10,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else {
+                    Text(
+                        text = "この日の記録は未登録です。\nここをタップして記録しましょう。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             Button(
                 onClick = onEditSelectedDate,
@@ -371,17 +431,6 @@ private fun SummaryCard(
             }
         }
     }
-}
-
-@Composable
-private fun SummaryRow(
-    label: String,
-    value: String
-) {
-    Text(
-        text = "$label: $value",
-        style = MaterialTheme.typography.bodyMedium
-    )
 }
 
 @Preview(showBackground = true)
