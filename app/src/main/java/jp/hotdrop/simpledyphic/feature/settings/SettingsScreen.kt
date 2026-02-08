@@ -31,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,7 +46,6 @@ import kotlinx.coroutines.launch
 fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     SettingsScreen(
@@ -56,7 +54,7 @@ fun SettingsRoute(
         onLicenseClick = viewModel::onLicenseClick,
         onLicenseDismiss = viewModel::onLicenseDismiss,
         onOperationMessageDismiss = viewModel::onOperationMessageDismiss,
-        onSignInClick = { scope.launch { viewModel.onSignInClick(context) } },
+        onSignInClick = { scope.launch { viewModel.onSignInClick() } },
         onSignOutClick = { scope.launch { viewModel.onSignOutClick() } },
         onBackupClick = { scope.launch { viewModel.onBackupClick() } },
         onRestoreClick = { scope.launch { viewModel.onRestoreClick() } }

@@ -1,6 +1,5 @@
 package jp.hotdrop.simpledyphic.data.repository
 
-import android.content.Context
 import java.time.LocalDate
 import java.util.LinkedHashMap
 import kotlinx.coroutines.test.runTest
@@ -151,7 +150,11 @@ class LocalRecordRepositoryTest {
 
         override fun currentAccount(): UserAccount? = signedInAccount
 
-        override suspend fun signInWithGoogle(context: Context): UserAccount? = signedInAccount
+        override suspend fun signInWithGoogle(): UserAccount {
+            return checkNotNull(signedInAccount) {
+                "signedInAccount must be set before signInWithGoogle()"
+            }
+        }
 
         override suspend fun signOut() {
             signedInAccount = null

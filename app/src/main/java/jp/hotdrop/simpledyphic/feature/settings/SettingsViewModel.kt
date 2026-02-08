@@ -48,12 +48,12 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(operationMessage = null) }
     }
 
-    suspend fun onSignInClick(context: Context) {
+    suspend fun onSignInClick() {
         executeOperation(
             actionName = "Sign-in",
             successMessage = "Signed in successfully."
         ) {
-            accountRepository.signInWithGoogle(context)
+            accountRepository.signInWithGoogle()
             syncCurrentAccount()
         }
     }

@@ -1,6 +1,5 @@
 package jp.hotdrop.simpledyphic.data.repository.impl
 
-import android.content.Context
 import javax.inject.Inject
 import javax.inject.Singleton
 import jp.hotdrop.simpledyphic.data.remote.auth.AuthRemoteDataSource
@@ -13,8 +12,8 @@ class DefaultAccountRepository @Inject constructor(
 ) : AccountRepository {
     override fun currentAccount(): UserAccount? = authRemoteDataSource.currentAccount()
 
-    override suspend fun signInWithGoogle(context: Context): UserAccount? {
-        return authRemoteDataSource.signInWithGoogle(context)
+    override suspend fun signInWithGoogle(): UserAccount {
+        return authRemoteDataSource.signInWithGoogle()
     }
 
     override suspend fun signOut() {

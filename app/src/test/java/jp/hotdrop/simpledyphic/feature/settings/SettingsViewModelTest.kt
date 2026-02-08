@@ -1,6 +1,5 @@
 package jp.hotdrop.simpledyphic.feature.settings
 
-import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import jp.hotdrop.simpledyphic.core.log.AppLogger
 import jp.hotdrop.simpledyphic.domain.model.Record
@@ -29,7 +28,7 @@ class SettingsViewModelTest {
             name = "Google User",
             email = "user@example.com"
         )
-        viewModel.onSignInClick(ApplicationProvider.getApplicationContext())
+        viewModel.onSignInClick()
         assertTrue(viewModel.uiState.value.isSignedIn)
         assertTrue(viewModel.uiState.value.operationMessage != null)
 
@@ -71,7 +70,7 @@ class SettingsViewModelTest {
         }
         val viewModel = createViewModel(accountRepository = fakeAccountRepository)
 
-        viewModel.onSignInClick(ApplicationProvider.getApplicationContext())
+        viewModel.onSignInClick()
         assertTrue(viewModel.uiState.value.operationMessage != null)
 
         viewModel.onOperationMessageDismiss()
@@ -89,9 +88,12 @@ class SettingsViewModelTest {
 
         override fun currentAccount(): UserAccount? = current
 
-        override suspend fun signInWithGoogle(context: Context): UserAccount? {
-            current = signInResult
-            return signInResult
+        override suspend fun signInWithGoogle(): UserAccount {
+            val result = checkNotNull(signInResult) {
+                "signInResult must be set before signInWithGoogle()"
+            }
+            current = result
+            return result
         }
 
         override suspend fun signOut() {
