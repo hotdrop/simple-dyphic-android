@@ -2,6 +2,7 @@ package jp.hotdrop.simpledyphic.feature.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
@@ -41,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
@@ -181,11 +184,13 @@ private fun CalendarContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
@@ -227,7 +232,9 @@ private fun CalendarContent(
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
         ) {
             Column(modifier = Modifier.padding(8.dp)) {
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -330,7 +337,7 @@ private fun RecordMarkers(record: Record?) {
     ) {
         MarkerSymbol(symbol = if (record?.isToilet == true) "\uD83D\uDCA9" else null)
         MarkerSymbol(symbol = conditionSymbol(record?.condition))
-        MarkerSymbol(symbol = activitySymbol(record))
+        ActivityMarker(record = record)
     }
 }
 
@@ -349,20 +356,36 @@ private fun MarkerSymbol(symbol: String?) {
     }
 }
 
+@Composable
+private fun ActivityMarker(record: Record?) {
+    Box(
+        modifier = Modifier.size(15.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (record == null) return
+        when {
+            (record.ringfitKcal ?: 0.0) > 0.0 || (record.ringfitKm ?: 0.0) > 0.0 -> {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_ringfit),
+                    contentDescription = null,
+                    modifier = Modifier.size(13.dp)
+                )
+            }
+            (record.stepCount ?: 0) >= 7000 -> {
+                Text(
+                    text = "\uD83D\uDEB6",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+    }
+}
+
 private fun conditionSymbol(rawCondition: String?): String? {
     return when (rawCondition) {
         "良い" -> "\uD83D\uDE0A"
         "普通" -> "\uD83D\uDE10"
         "悪い" -> "\uD83D\uDE22"
-        else -> null
-    }
-}
-
-private fun activitySymbol(record: Record?): String? {
-    if (record == null) return null
-    return when {
-        (record.ringfitKcal ?: 0.0) > 0.0 || (record.ringfitKm ?: 0.0) > 0.0 -> "\uD83C\uDFC3"
-        (record.stepCount ?: 0) >= 7000 -> "\uD83D\uDEB6"
         else -> null
     }
 }
@@ -376,8 +399,8 @@ private fun SummaryCard(
 ) {
     Card(
         modifier = modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable(onClick = onEditSelectedDate),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
