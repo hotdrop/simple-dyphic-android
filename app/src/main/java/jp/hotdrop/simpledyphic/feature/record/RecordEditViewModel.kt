@@ -30,7 +30,7 @@ class RecordEditViewModel @Inject constructor(
     private val appLogger: AppLogger
 ) : ViewModel() {
 
-    private val recordId: Int = checkNotNull(savedStateHandle[RECORD_ID_ARG])
+    private val recordId: Int = parseRecordId(savedStateHandle)
     private var baseRecord: Record = Record.createEmpty(DyphicId.idToDate(recordId))
     private var pendingHealthSummary: DailyHealthSummary? = null
 
@@ -399,5 +399,17 @@ class RecordEditViewModel @Inject constructor(
             "Imported step count and calories from Health Connect."
         private const val HEALTH_CONNECT_OVERWRITE_CANCELLED_MESSAGE: String =
             "Import cancelled. Existing values were kept."
+
+        private fun parseRecordId(savedStateHandle: SavedStateHandle): Int {
+            val raw = checkNotNull(savedStateHandle.get<Any?>(RECORD_ID_ARG)) {
+                "Missing navigation argument: $RECORD_ID_ARG"
+            }
+            return when (raw) {
+                is Int -> raw
+                is Long -> raw.toInt()
+                is String -> raw.toIntOrNull()
+                else -> null
+            } ?: error("Invalid navigation argument: $RECORD_ID_ARG=$raw")
+        }
     }
 }
