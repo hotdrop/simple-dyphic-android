@@ -26,15 +26,15 @@ class CalendarViewModel @Inject constructor(
 
     init {
         appLogger.i("CalendarViewModel initialized")
-        reloadRecords()
+        reloadRecords(showLoading = true)
     }
 
-    fun onResume() {
-        reloadRecords()
+    fun onRecordUpdated() {
+        reloadRecords(showLoading = false)
     }
 
     fun onRetry() {
-        reloadRecords()
+        reloadRecords(showLoading = true)
     }
 
     fun onVisibleMonthChanged(yearMonth: YearMonth) {
@@ -52,9 +52,13 @@ class CalendarViewModel @Inject constructor(
 
     fun selectedDayId(): Int = DyphicId.dateToId(_uiState.value.selectedDate)
 
-    private fun reloadRecords() {
+    private fun reloadRecords(showLoading: Boolean) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            if (showLoading) {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            } else {
+                _uiState.update { it.copy(errorMessage = null) }
+            }
             runCatching {
                 recordRepository.findAll()
             }.onSuccess { records ->

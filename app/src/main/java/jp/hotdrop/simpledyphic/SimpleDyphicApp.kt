@@ -16,10 +16,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import jp.hotdrop.simpledyphic.feature.calendar.CalendarRoute
 import jp.hotdrop.simpledyphic.feature.record.RecordEditRoute
 import jp.hotdrop.simpledyphic.feature.record.RecordEditViewModel
@@ -100,7 +102,12 @@ fun SimpleDyphicApp() {
             composable(TopLevelDestination.Settings.route) {
                 SettingsRoute()
             }
-            composable("record/{${RecordEditViewModel.RECORD_ID_ARG}}") {
+            composable(
+                route = "record/{${RecordEditViewModel.RECORD_ID_ARG}}",
+                arguments = listOf(
+                    navArgument(RecordEditViewModel.RECORD_ID_ARG) { type = NavType.IntType }
+                )
+            ) {
                 RecordEditRoute(
                     onBack = { updated ->
                         navController.previousBackStackEntry

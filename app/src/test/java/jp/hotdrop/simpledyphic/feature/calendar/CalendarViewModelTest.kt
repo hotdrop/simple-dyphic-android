@@ -49,7 +49,7 @@ class CalendarViewModelTest {
     }
 
     @Test
-    fun onResume_reloadsUpdatedRecords() = runTest(dispatcher) {
+    fun onRecordUpdated_reloadsUpdatedRecords() = runTest(dispatcher) {
         val initial = testRecord(LocalDate.of(2026, 2, 7), memo = "before")
         val added = testRecord(LocalDate.of(2026, 2, 8), memo = "after")
         val repository = FakeRecordRepository(mutableMapOf(initial.id to initial))
@@ -61,7 +61,7 @@ class CalendarViewModelTest {
         advanceUntilIdle()
 
         repository.save(added)
-        viewModel.onResume()
+        viewModel.onRecordUpdated()
         advanceUntilIdle()
 
         assertEquals(2, viewModel.uiState.value.recordsByDate.size)
