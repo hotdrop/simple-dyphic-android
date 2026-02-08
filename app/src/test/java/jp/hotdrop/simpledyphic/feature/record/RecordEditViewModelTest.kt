@@ -11,6 +11,8 @@ import jp.hotdrop.simpledyphic.domain.repository.HealthConnectRepository
 import jp.hotdrop.simpledyphic.domain.repository.RecordRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -151,6 +153,48 @@ class RecordEditViewModelTest {
         assertEquals(8000, viewModel.uiState.value.stepCount)
         assertEquals(420.0, viewModel.uiState.value.healthKcal)
         assertTrue(viewModel.uiState.value.hasChanges)
+    }
+
+    @Test
+    fun onScreenEntered_whenPermissionsGranted_importsHealthSummaryWithoutInfoMessage() = runTest(dispatcher) {
+        val date = LocalDate.of(2026, 2, 7)
+        val base = Record.createEmpty(date)
+        val repository = FakeRecordRepository(mutableMapOf(base.id to base))
+        val healthRepository = FakeHealthConnectRepository(
+            summary = DailyHealthSummary(stepCount = 8123, burnedKcal = 345.6)
+        )
+        val viewModel = createViewModel(recordId = base.id, repository = repository, healthRepository)
+        advanceUntilIdle()
+
+        viewModel.onScreenEntered()
+        advanceUntilIdle()
+
+        assertEquals(8123, viewModel.uiState.value.stepCount)
+        assertEquals(345.6, viewModel.uiState.value.healthKcal)
+        assertEquals(null, viewModel.uiState.value.healthConnectMessage)
+    }
+
+    @Test
+    fun onScreenEntered_whenPermissionsMissing_requestsHealthPermission() = runTest(dispatcher) {
+        val date = LocalDate.of(2026, 2, 7)
+        val base = Record.createEmpty(date)
+        val repository = FakeRecordRepository(mutableMapOf(base.id to base))
+        val expectedPermissions = setOf("perm.steps", "perm.kcal")
+        val healthRepository = FakeHealthConnectRepository(
+            permissions = expectedPermissions,
+            grantedPermissions = emptySet()
+        )
+        val viewModel = createViewModel(recordId = base.id, repository = repository, healthRepository)
+        advanceUntilIdle()
+
+        val effectDeferred = async { viewModel.effects.first() }
+        viewModel.onScreenEntered()
+        advanceUntilIdle()
+
+        val effect = effectDeferred.await()
+        assertTrue(effect is RecordEditViewModel.RecordEditEffect.RequestHealthPermissions)
+        effect as RecordEditViewModel.RecordEditEffect.RequestHealthPermissions
+        assertEquals(expectedPermissions, effect.permissions)
     }
 
     private fun createViewModel(

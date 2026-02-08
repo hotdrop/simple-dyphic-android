@@ -13,6 +13,7 @@ import jp.hotdrop.simpledyphic.domain.model.HealthConnectStatus
 import jp.hotdrop.simpledyphic.domain.model.Record
 import jp.hotdrop.simpledyphic.domain.repository.HealthConnectRepository
 import jp.hotdrop.simpledyphic.domain.repository.RecordRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -33,6 +34,7 @@ class RecordEditViewModel @Inject constructor(
     private val recordId: Int = parseRecordId(savedStateHandle)
     private var baseRecord: Record = Record.createEmpty(DyphicId.idToDate(recordId))
     private var pendingHealthSummary: DailyHealthSummary? = null
+    private var hasRequestedInitialHealthSync: Boolean = false
 
     private val _uiState = MutableStateFlow(
         RecordEditUiState(
@@ -43,10 +45,7 @@ class RecordEditViewModel @Inject constructor(
 
     private val _effects = MutableSharedFlow<RecordEditEffect>()
     val effects: SharedFlow<RecordEditEffect> = _effects.asSharedFlow()
-
-    init {
-        loadRecord()
-    }
+    private val loadRecordJob: Job = loadRecord()
 
     fun onBreakfastChanged(value: String) {
         updateInput { it.copy(breakfast = value, errorMessage = null) }
@@ -95,6 +94,17 @@ class RecordEditViewModel @Inject constructor(
     fun confirmDiscardAndClose(onClose: () -> Unit) {
         _uiState.update { it.copy(showDiscardDialog = false) }
         onClose()
+    }
+
+    fun onScreenEntered() {
+        if (hasRequestedInitialHealthSync) {
+            return
+        }
+        hasRequestedInitialHealthSync = true
+        viewModelScope.launch {
+            loadRecordJob.join()
+            onHealthSyncRequested()
+        }
     }
 
     fun onHealthSyncRequested() {
@@ -178,6 +188,12 @@ class RecordEditViewModel @Inject constructor(
 
     fun dismissHealthConnectMessage() {
         _uiState.update { it.copy(healthConnectMessage = null) }
+    }
+
+    fun onHealthConnectAppOpenFailed() {
+        _uiState.update {
+            it.copy(healthConnectMessage = HEALTH_CONNECT_APP_OPEN_FAILED_MESSAGE)
+        }
     }
 
     fun save(onComplete: (Boolean) -> Unit) {
@@ -277,14 +293,14 @@ class RecordEditViewModel @Inject constructor(
                 healthKcal = summary.burnedKcal,
                 isHealthSyncing = false,
                 showHealthOverwriteDialog = false,
-                healthConnectMessage = HEALTH_CONNECT_IMPORTED_MESSAGE,
+                healthConnectMessage = null,
                 errorMessage = null
             )
         }
     }
 
-    private fun loadRecord() {
-        viewModelScope.launch {
+    private fun loadRecord(): Job {
+        return viewModelScope.launch {
             runCatching {
                 recordRepository.find(recordId)
             }.onSuccess { record ->
@@ -395,10 +411,10 @@ class RecordEditViewModel @Inject constructor(
             "Health Connect permission was denied."
         private const val HEALTH_CONNECT_IMPORT_FAILED_MESSAGE: String =
             "Failed to import Health Connect data."
-        private const val HEALTH_CONNECT_IMPORTED_MESSAGE: String =
-            "Imported step count and calories from Health Connect."
         private const val HEALTH_CONNECT_OVERWRITE_CANCELLED_MESSAGE: String =
             "Import cancelled. Existing values were kept."
+        private const val HEALTH_CONNECT_APP_OPEN_FAILED_MESSAGE: String =
+            "Failed to open the Health Connect app."
 
         private fun parseRecordId(savedStateHandle: SavedStateHandle): Int {
             val raw = checkNotNull(savedStateHandle.get<Any?>(RECORD_ID_ARG)) {

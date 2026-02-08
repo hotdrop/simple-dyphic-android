@@ -1,5 +1,6 @@
 package jp.hotdrop.simpledyphic.feature.record
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.clickable
@@ -38,7 +39,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -71,6 +73,7 @@ fun RecordEditRoute(
     onBack: (Boolean) -> Unit,
     viewModel: RecordEditViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = PermissionController.createRequestPermissionResultContract(),
@@ -78,6 +81,7 @@ fun RecordEditRoute(
     )
 
     LaunchedEffect(viewModel) {
+        viewModel.onScreenEntered()
         viewModel.effects.collect { effect ->
             when (effect) {
                 is RecordEditViewModel.RecordEditEffect.RequestHealthPermissions -> {
@@ -101,7 +105,11 @@ fun RecordEditRoute(
         onRingfitKcalChanged = viewModel::onRingfitKcalChanged,
         onRingfitKmChanged = viewModel::onRingfitKmChanged,
         onSave = { viewModel.save(onBack) },
-        onHealthSyncRequest = viewModel::onHealthSyncRequested,
+        onHealthSyncRequest = {
+            if (!launchHealthConnectApp(context)) {
+                viewModel.onHealthConnectAppOpenFailed()
+            }
+        },
         onConfirmHealthOverwrite = viewModel::confirmHealthOverwrite,
         onDismissHealthOverwriteDialog = viewModel::dismissHealthOverwriteDialog,
         onDismissHealthMessage = viewModel::dismissHealthConnectMessage
@@ -180,7 +188,8 @@ fun RecordEditScreen(
                 healthKcal = uiState.healthKcal ?: 0.0,
                 isHealthSyncing = uiState.isHealthSyncing,
                 healthConnectMessage = uiState.healthConnectMessage,
-                onHealthSyncRequest = onHealthSyncRequest
+                onHealthSyncRequest = onHealthSyncRequest,
+                onDismissHealthMessage = onDismissHealthMessage
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -390,7 +399,8 @@ private fun HealthConnectCard(
     healthKcal: Double,
     isHealthSyncing: Boolean,
     healthConnectMessage: String?,
-    onHealthSyncRequest: () -> Unit
+    onHealthSyncRequest: () -> Unit,
+    onDismissHealthMessage: () -> Unit
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -424,12 +434,21 @@ private fun HealthConnectCard(
             Spacer(modifier = Modifier.width(48.dp))
             Column(modifier = Modifier.weight(1f)) {
                 healthConnectMessage?.let { message ->
-                    Text(
-                        text = message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(onClick = onDismissHealthMessage) {
+                            Text(text = stringResource(R.string.record_health_message_dismiss))
+                        }
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                 }
                 HealthMetricRow(
@@ -581,6 +600,16 @@ private fun RecordEditScreenPreview() {
         )
     }
 }
+
+private fun launchHealthConnectApp(context: Context): Boolean {
+    val launchIntent = context.packageManager.getLaunchIntentForPackage(HEALTH_CONNECT_PACKAGE_NAME)
+        ?: return false
+    return runCatching {
+        context.startActivity(launchIntent)
+    }.isSuccess
+}
+
+private const val HEALTH_CONNECT_PACKAGE_NAME: String = "com.google.android.apps.healthdata"
 
 private val RECORD_DATE_FORMATTER: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy年MM月dd日", Locale.JAPAN)
