@@ -30,7 +30,7 @@ android {
 
     buildTypes {
         debug {
-            // Keep applicationId identical to google-services.json during Phase 0.
+            applicationIdSuffix = ".debug" // jp.hotdrop.simpledyphic.debug
         }
         release {
             isMinifyEnabled = false

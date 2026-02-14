@@ -14,6 +14,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
+import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.model.UserAccount
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -36,24 +37,17 @@ class FirebaseAuthRemoteDataSource @Inject constructor(
     }
 
     suspend fun signInWithGoogle(): UserAccount {
-        if (firebaseAuth.currentUser != null) {
-            return currentAccount() ?: error("Failed to resolve signed-in account.")
-        }
-
         val result = executeCredentialRequest()
         val credential = result.credential
-        if (
-            credential !is CustomCredential ||
-            credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-        ) {
-            throw IllegalStateException("Unsupported credential type: ${credential::class.simpleName}")
+        if (credential !is CustomCredential || credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            throw IllegalStateException("サポートされていない認証情報タイプです: ${credential::class.simpleName}")
         }
 
-        val googleCredential = GoogleIdTokenCredential.Companion.createFrom(credential.data)
+        val googleCredential = GoogleIdTokenCredential.createFrom(credential.data)
         val firebaseCredential = GoogleAuthProvider.getCredential(googleCredential.idToken, null)
         firebaseAuth.signInWithCredential(firebaseCredential).await()
 
-        return currentAccount() ?: error("Failed to resolve signed-in account.")
+        return currentAccount() ?: error("サインインユーザー情報の取得に失敗しました")
     }
 
     suspend fun signOut() {
@@ -61,33 +55,24 @@ class FirebaseAuthRemoteDataSource @Inject constructor(
         try {
             credentialManager.clearCredentialState(ClearCredentialStateRequest())
         } catch (error: ClearCredentialException) {
-            throw IllegalStateException("Failed to clear credential state.", error)
+            throw IllegalStateException("認証情報のクリアに失敗しました", error)
         }
     }
 
     private suspend fun executeCredentialRequest(): GetCredentialResponse {
-        val serverClientId = resolveWebClientId()
+        val serverClientId = context.getString(R.string.default_web_client_id)
 
         return try {
-            requestGoogleCredential(
-                serverClientId = serverClientId,
-                filterAuthorizedAccounts = true
-            )
+            requestGoogleCredential(serverClientId, true)
         } catch (error: GetCredentialException) {
             if (error is NoCredentialException) {
                 try {
-                    requestGoogleCredential(
-                        serverClientId = serverClientId,
-                        filterAuthorizedAccounts = false
-                    )
+                    requestGoogleCredential(serverClientId, false)
                 } catch (fallbackError: GetCredentialException) {
-                    throw IllegalStateException(
-                        "Failed to acquire Google credential.",
-                        fallbackError
-                    )
+                    throw IllegalStateException("Google認証の取得に失敗しました", fallbackError)
                 }
             } else {
-                throw IllegalStateException("Failed to acquire Google credential.", error)
+                throw IllegalStateException("Google認証の取得に失敗しました", error)
             }
         }
     }
@@ -105,19 +90,6 @@ class FirebaseAuthRemoteDataSource @Inject constructor(
             .addCredentialOption(option)
             .build()
 
-        return credentialManager.getCredential(
-            context = context,
-            request = request
-        )
-    }
-
-    private fun resolveWebClientId(): String {
-        val resourceId = context.resources.getIdentifier(
-            "default_web_client_id",
-            "string",
-            context.packageName
-        )
-        check(resourceId != 0) { "default_web_client_id is not defined in resources." }
-        return context.getString(resourceId)
+        return credentialManager.getCredential(context, request)
     }
 }
