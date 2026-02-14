@@ -113,8 +113,8 @@ fun CalendarScreen(
 ) {
     when {
         uiState.isLoading -> LoadingContent(modifier = modifier)
-        uiState.errorMessage != null -> ErrorContent(
-            message = uiState.errorMessage,
+        uiState.errorMessageResId != null -> ErrorContent(
+            message = stringResource(uiState.errorMessageResId),
             onRetry = onRetry,
             modifier = modifier
         )
@@ -137,10 +137,13 @@ private fun CalendarContent(
     onEditSelectedDate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val locale = Locale.JAPAN
+    val locale = Locale.getDefault()
     val firstDayOfWeek = DayOfWeek.SUNDAY
     val weekDays = remember(firstDayOfWeek) { daysOfWeek(firstDayOfWeek) }
-    val monthFormatter = remember { DateTimeFormatter.ofPattern("yyyy年M月", locale) }
+    val monthFormatPattern = stringResource(R.string.calendar_month_format_pattern)
+    val monthFormatter = remember(monthFormatPattern, locale) {
+        DateTimeFormatter.ofPattern(monthFormatPattern, locale)
+    }
     val initialVisibleMonth = remember(uiState.calendarStartMonth, uiState.calendarEndMonth) {
         uiState.currentMonth
     }
@@ -347,7 +350,7 @@ private fun RecordMarkers(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            MarkerSymbol(symbol = if (record?.isToilet == true) "\uD83D\uDCA9" else null)
+            MarkerSymbol(symbolResId = if (record?.isToilet == true) R.string.calendar_marker_toilet else null)
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             ConditionMarker(conditionType = record?.condition)
@@ -359,14 +362,14 @@ private fun RecordMarkers(
 }
 
 @Composable
-private fun MarkerSymbol(symbol: String?) {
+private fun MarkerSymbol(symbolResId: Int?) {
     Box(
         modifier = Modifier.size(15.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (symbol != null) {
+        if (symbolResId != null) {
             Text(
-                text = symbol,
+                text = stringResource(symbolResId),
                 style = MaterialTheme.typography.labelSmall
             )
         }
@@ -390,7 +393,7 @@ private fun ActivityMarker(record: Record?) {
             }
             (record.stepCount ?: 0) >= 7000 -> {
                 Text(
-                    text = "\uD83D\uDEB6",
+                    text = stringResource(R.string.calendar_marker_walk),
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -421,6 +424,12 @@ private fun SummaryCard(
     onEditSelectedDate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val locale = Locale.getDefault()
+    val summaryDateFormatPattern = stringResource(R.string.calendar_summary_date_format_pattern)
+    val summaryDateFormatter = remember(summaryDateFormatPattern, locale) {
+        DateTimeFormatter.ofPattern(summaryDateFormatPattern, locale)
+    }
+
     Card(
         modifier = modifier
             .clickable(onClick = onEditSelectedDate),
@@ -437,7 +446,7 @@ private fun SummaryCard(
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = selectedDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd(E)", Locale.JAPAN)),
+                text = selectedDate.format(summaryDateFormatter),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
@@ -445,7 +454,7 @@ private fun SummaryCard(
             HorizontalDivider()
             if (record == null) {
                 Text(
-                    text = "この日の記録は未登録です。\nここをタップして記録しましょう。",
+                    text = stringResource(R.string.calendar_summary_empty_prompt),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -453,7 +462,7 @@ private fun SummaryCard(
                 val memo = record.conditionMemo.orEmpty()
                 if (memo.isNotBlank()) {
                     Text(
-                        text = "【体調メモ】",
+                        text = stringResource(R.string.calendar_summary_memo_title),
                         style = MaterialTheme.typography.titleSmall
                     )
                     Text(
@@ -464,7 +473,7 @@ private fun SummaryCard(
                     )
                 } else {
                     Text(
-                        text = "この日の記録は未登録です。\nここをタップして記録しましょう。",
+                        text = stringResource(R.string.calendar_summary_empty_prompt),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -493,7 +502,7 @@ private fun CalendarScreenPreview() {
     )
     val previewState = CalendarUiState(
         isLoading = false,
-        errorMessage = null,
+        errorMessageResId = null,
         calendarStartMonth = YearMonth.of(2025, 1),
         calendarEndMonth = YearMonth.of(2027, 12),
         currentMonth = YearMonth.from(selectedDate),

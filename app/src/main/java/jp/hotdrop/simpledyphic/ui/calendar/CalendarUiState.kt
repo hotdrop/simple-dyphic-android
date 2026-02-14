@@ -1,12 +1,13 @@
 package jp.hotdrop.simpledyphic.ui.calendar
 
+import androidx.annotation.StringRes
 import java.time.LocalDate
 import java.time.YearMonth
 import jp.hotdrop.simpledyphic.model.Record
 
 data class CalendarUiState(
     val isLoading: Boolean = true,
-    val errorMessage: String? = null,
+    @param:StringRes val errorMessageResId: Int? = null,
     val calendarStartMonth: YearMonth = YearMonth.now().minusYears(2),
     val calendarEndMonth: YearMonth = YearMonth.now().plusYears(2),
     val currentMonth: YearMonth = YearMonth.now(),

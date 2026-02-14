@@ -17,7 +17,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import jp.hotdrop.simpledyphic.model.UserAccount
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class FirebaseAuthRemoteDataSource @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val firebaseAuth: FirebaseAuth,
@@ -42,7 +44,7 @@ class FirebaseAuthRemoteDataSource @Inject constructor(
         val credential = result.credential
         if (
             credential !is CustomCredential ||
-            credential.type != GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+            credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
         ) {
             throw IllegalStateException("Unsupported credential type: ${credential::class.simpleName}")
         }

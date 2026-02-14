@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.data.repository.HealthConnectRepository
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
 import jp.hotdrop.simpledyphic.model.ConditionType
@@ -47,35 +48,35 @@ class RecordEditViewModel @Inject constructor(
     private val loadRecordJob: Job = loadRecord()
 
     fun onBreakfastChanged(value: String) {
-        updateInput { it.copy(breakfast = value, errorMessage = null) }
+        updateInput { it.copy(breakfast = value, errorMessageResId = null) }
     }
 
     fun onLunchChanged(value: String) {
-        updateInput { it.copy(lunch = value, errorMessage = null) }
+        updateInput { it.copy(lunch = value, errorMessageResId = null) }
     }
 
     fun onDinnerChanged(value: String) {
-        updateInput { it.copy(dinner = value, errorMessage = null) }
+        updateInput { it.copy(dinner = value, errorMessageResId = null) }
     }
 
     fun onConditionTypeChanged(value: ConditionType) {
-        updateInput { it.copy(conditionType = value, errorMessage = null) }
+        updateInput { it.copy(conditionType = value, errorMessageResId = null) }
     }
 
     fun onConditionMemoChanged(value: String) {
-        updateInput { it.copy(conditionMemo = value, errorMessage = null) }
+        updateInput { it.copy(conditionMemo = value, errorMessageResId = null) }
     }
 
     fun onIsToiletChanged(value: Boolean) {
-        updateInput { it.copy(isToilet = value, errorMessage = null) }
+        updateInput { it.copy(isToilet = value, errorMessageResId = null) }
     }
 
     fun onRingfitKcalChanged(value: String) {
-        updateInput { it.copy(ringfitKcalInput = value, errorMessage = null) }
+        updateInput { it.copy(ringfitKcalInput = value, errorMessageResId = null) }
     }
 
     fun onRingfitKmChanged(value: String) {
-        updateInput { it.copy(ringfitKmInput = value, errorMessage = null) }
+        updateInput { it.copy(ringfitKmInput = value, errorMessageResId = null) }
     }
 
     fun onBackRequested(onClose: () -> Unit) {
@@ -111,8 +112,8 @@ class RecordEditViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isHealthSyncing = true,
-                    healthConnectMessage = null,
-                    errorMessage = null
+                    healthConnectMessageResId = null,
+                    errorMessageResId = null
                 )
             }
 
@@ -133,7 +134,7 @@ class RecordEditViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isHealthSyncing = false,
-                            healthConnectMessage = HEALTH_CONNECT_NOT_INSTALLED_MESSAGE
+                            healthConnectMessageResId = R.string.record_health_message_not_installed
                         )
                     }
                 }
@@ -141,7 +142,7 @@ class RecordEditViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isHealthSyncing = false,
-                            healthConnectMessage = HEALTH_CONNECT_UPDATE_REQUIRED_MESSAGE
+                            healthConnectMessageResId = R.string.record_health_message_update_required
                         )
                     }
                 }
@@ -155,14 +156,14 @@ class RecordEditViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isHealthSyncing = false,
-                    healthConnectMessage = HEALTH_CONNECT_PERMISSION_DENIED_MESSAGE
+                    healthConnectMessageResId = R.string.record_health_message_permission_denied
                 )
             }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isHealthSyncing = true, healthConnectMessage = null) }
+            _uiState.update { it.copy(isHealthSyncing = true, healthConnectMessageResId = null) }
             importHealthSummary()
         }
     }
@@ -178,18 +179,18 @@ class RecordEditViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 showHealthOverwriteDialog = false,
-                healthConnectMessage = HEALTH_CONNECT_OVERWRITE_CANCELLED_MESSAGE
+                healthConnectMessageResId = R.string.record_health_message_overwrite_cancelled
             )
         }
     }
 
     fun dismissHealthConnectMessage() {
-        _uiState.update { it.copy(healthConnectMessage = null) }
+        _uiState.update { it.copy(healthConnectMessageResId = null) }
     }
 
     fun onHealthConnectAppOpenFailed() {
         _uiState.update {
-            it.copy(healthConnectMessage = HEALTH_CONNECT_APP_OPEN_FAILED_MESSAGE)
+            it.copy(healthConnectMessageResId = R.string.record_health_message_app_open_failed)
         }
     }
 
@@ -198,21 +199,21 @@ class RecordEditViewModel @Inject constructor(
             val kcalInput = parseNumberInput(_uiState.value.ringfitKcalInput)
             if (kcalInput is ParsedNumber.Invalid) {
                 _uiState.update {
-                    it.copy(errorMessage = RINGFIT_KCAL_ERROR_MESSAGE)
+                    it.copy(errorMessageResId = R.string.record_error_ringfit_kcal_number)
                 }
                 return@launch
             }
             val kmInput = parseNumberInput(_uiState.value.ringfitKmInput)
             if (kmInput is ParsedNumber.Invalid) {
                 _uiState.update {
-                    it.copy(errorMessage = RINGFIT_KM_ERROR_MESSAGE)
+                    it.copy(errorMessageResId = R.string.record_error_ringfit_km_number)
                 }
                 return@launch
             }
             val kcal = (kcalInput as ParsedNumber.Valid).value
             val km = (kmInput as ParsedNumber.Valid).value
 
-            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+            _uiState.update { it.copy(isSaving = true, errorMessageResId = null) }
             val target = baseRecord.copy(
                 breakfast = _uiState.value.breakfast.ifBlank { null },
                 lunch = _uiState.value.lunch.ifBlank { null },
@@ -226,7 +227,7 @@ class RecordEditViewModel @Inject constructor(
                 ringfitKm = km
             )
             if (target == baseRecord) {
-                _uiState.update { it.copy(isSaving = false, errorMessage = null, hasChanges = false) }
+                _uiState.update { it.copy(isSaving = false, errorMessageResId = null, hasChanges = false) }
                 onComplete(false)
                 return@launch
             }
@@ -235,14 +236,14 @@ class RecordEditViewModel @Inject constructor(
                 recordRepository.save(target)
             }.onSuccess {
                 baseRecord = target
-                _uiState.update { it.copy(isSaving = false, errorMessage = null, hasChanges = false) }
+                _uiState.update { it.copy(isSaving = false, errorMessageResId = null, hasChanges = false) }
                 onComplete(true)
             }.onFailure { error ->
                 Timber.e(error, "Failed to save record")
                 _uiState.update {
                     it.copy(
                         isSaving = false,
-                        errorMessage = error.message ?: "Failed to save record"
+                        errorMessageResId = R.string.record_error_save_failed
                     )
                 }
             }
@@ -270,7 +271,7 @@ class RecordEditViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isHealthSyncing = false,
-                    healthConnectMessage = error.message ?: HEALTH_CONNECT_IMPORT_FAILED_MESSAGE
+                    healthConnectMessageResId = R.string.record_health_message_import_failed
                 )
             }
         }
@@ -290,8 +291,8 @@ class RecordEditViewModel @Inject constructor(
                 healthKcal = summary.burnedKcal,
                 isHealthSyncing = false,
                 showHealthOverwriteDialog = false,
-                healthConnectMessage = null,
-                errorMessage = null
+                healthConnectMessageResId = null,
+                errorMessageResId = null
             )
         }
     }
@@ -340,7 +341,7 @@ class RecordEditViewModel @Inject constructor(
                 } else {
                     Timber.e(error, "Failed to load record")
                     _uiState.update {
-                        it.copy(errorMessage = error.message ?: "Failed to load record")
+                        it.copy(errorMessageResId = R.string.record_error_load_failed)
                     }
                 }
             }
@@ -398,17 +399,8 @@ class RecordEditViewModel @Inject constructor(
         const val RECORD_ID_ARG: String = "recordId"
         const val RESULT_UPDATED_ARG: String = "recordUpdated"
 
-        private const val RINGFIT_KCAL_ERROR_MESSAGE: String = "RingFit kcal must be a number."
-        private const val RINGFIT_KM_ERROR_MESSAGE: String = "RingFit km must be a number."
-        private const val HEALTH_CONNECT_NOT_INSTALLED_MESSAGE: String = "Health Connect is not installed on this device."
-        private const val HEALTH_CONNECT_UPDATE_REQUIRED_MESSAGE: String = "Health Connect requires an update before use."
-        private const val HEALTH_CONNECT_PERMISSION_DENIED_MESSAGE: String = "Health Connect permission was denied."
-        private const val HEALTH_CONNECT_IMPORT_FAILED_MESSAGE: String = "Failed to import Health Connect data."
-        private const val HEALTH_CONNECT_OVERWRITE_CANCELLED_MESSAGE: String = "Import cancelled. Existing values were kept."
-        private const val HEALTH_CONNECT_APP_OPEN_FAILED_MESSAGE: String = "Failed to open the Health Connect app."
-
         private fun parseRecordId(savedStateHandle: SavedStateHandle): Int {
-            val raw = checkNotNull(savedStateHandle.get<Any?>(RECORD_ID_ARG)) {
+            val raw = checkNotNull(savedStateHandle[RECORD_ID_ARG]) {
                 "Missing navigation argument: $RECORD_ID_ARG"
             }
             return when (raw) {

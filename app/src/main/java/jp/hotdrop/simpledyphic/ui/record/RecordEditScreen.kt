@@ -44,6 +44,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -138,6 +139,12 @@ fun RecordEditScreen(
     onDismissHealthMessage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val locale = Locale.getDefault()
+    val recordDateFormatPattern = stringResource(R.string.record_date_format_pattern)
+    val recordDateFormatter = remember(recordDateFormatPattern, locale) {
+        DateTimeFormatter.ofPattern(recordDateFormatPattern, locale)
+    }
+
     BackHandler(onBack = onBackRequest)
 
     Scaffold(
@@ -164,7 +171,7 @@ fun RecordEditScreen(
                 .padding(start = 8.dp, end = 8.dp, bottom = 16.dp)
         ) {
             Text(
-                text = uiState.recordDate.format(RECORD_DATE_FORMATTER),
+                text = uiState.recordDate.format(recordDateFormatter),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -187,7 +194,7 @@ fun RecordEditScreen(
                 stepCount = uiState.stepCount ?: 0,
                 healthKcal = uiState.healthKcal ?: 0.0,
                 isHealthSyncing = uiState.isHealthSyncing,
-                healthConnectMessage = uiState.healthConnectMessage,
+                healthConnectMessageResId = uiState.healthConnectMessageResId,
                 onHealthSyncRequest = onHealthSyncRequest,
                 onDismissHealthMessage = onDismissHealthMessage
             )
@@ -237,9 +244,9 @@ fun RecordEditScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            uiState.errorMessage?.let { message ->
+            uiState.errorMessageResId?.let { messageResId ->
                 Text(
-                    text = message,
+                    text = stringResource(messageResId),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -398,7 +405,7 @@ private fun HealthConnectCard(
     stepCount: Int,
     healthKcal: Double,
     isHealthSyncing: Boolean,
-    healthConnectMessage: String?,
+    healthConnectMessageResId: Int?,
     onHealthSyncRequest: () -> Unit,
     onDismissHealthMessage: () -> Unit
 ) {
@@ -433,14 +440,14 @@ private fun HealthConnectCard(
             }
             Spacer(modifier = Modifier.width(48.dp))
             Column(modifier = Modifier.weight(1f)) {
-                healthConnectMessage?.let { message ->
+                healthConnectMessageResId?.let { messageResId ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.Top
                     ) {
                         Text(
-                            text = message,
+                            text = stringResource(messageResId),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f)
@@ -610,5 +617,3 @@ private fun launchHealthConnectApp(context: Context): Boolean {
 }
 
 private const val HEALTH_CONNECT_PACKAGE_NAME: String = "com.google.android.apps.healthdata"
-
-private val RECORD_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日", Locale.JAPAN)

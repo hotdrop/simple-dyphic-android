@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
+import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
 import jp.hotdrop.simpledyphic.model.DyphicId
 import kotlinx.coroutines.launch
@@ -54,9 +55,9 @@ class CalendarViewModel @Inject constructor(
     private fun reloadRecords(showLoading: Boolean) {
         viewModelScope.launch {
             if (showLoading) {
-                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                _uiState.update { it.copy(isLoading = true, errorMessageResId = null) }
             } else {
-                _uiState.update { it.copy(errorMessage = null) }
+                _uiState.update { it.copy(errorMessageResId = null) }
             }
             runCatching {
                 recordRepository.findAll()
@@ -65,7 +66,7 @@ class CalendarViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(
                         isLoading = false,
-                        errorMessage = null,
+                        errorMessageResId = null,
                         recordsByDate = recordsByDate
                     )
                 }
@@ -74,7 +75,7 @@ class CalendarViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "Failed to load records"
+                        errorMessageResId = R.string.calendar_error_load_records
                     )
                 }
             }

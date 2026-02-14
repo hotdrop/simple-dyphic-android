@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import dagger.hilt.android.qualifiers.ApplicationContext
+import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.data.repository.AccountRepository
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +32,13 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onRetry() {
-        _uiState.update { it.copy(isLoading = false, errorMessage = null, operationMessage = null) }
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                errorMessageResId = null,
+                operationMessageResId = null
+            )
+        }
     }
 
     fun onLicenseClick() {
@@ -43,13 +50,13 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onOperationMessageDismiss() {
-        _uiState.update { it.copy(operationMessage = null) }
+        _uiState.update { it.copy(operationMessageResId = null) }
     }
 
     suspend fun onSignInClick() {
         executeOperation(
             actionName = "Sign-in",
-            successMessage = "Signed in successfully."
+            successMessageResId = R.string.settings_operation_sign_in_success
         ) {
             accountRepository.signInWithGoogle()
             syncCurrentAccount()
@@ -59,7 +66,7 @@ class SettingsViewModel @Inject constructor(
     suspend fun onSignOutClick() {
         executeOperation(
             actionName = "Sign-out",
-            successMessage = "Signed out successfully."
+            successMessageResId = R.string.settings_operation_sign_out_success
         ) {
             accountRepository.signOut()
             syncCurrentAccount()
@@ -69,7 +76,7 @@ class SettingsViewModel @Inject constructor(
     suspend fun onBackupClick() {
         executeOperation(
             actionName = "Backup",
-            successMessage = "Backup completed."
+            successMessageResId = R.string.settings_operation_backup_success
         ) {
             recordRepository.backup()
         }
@@ -78,7 +85,7 @@ class SettingsViewModel @Inject constructor(
     suspend fun onRestoreClick() {
         executeOperation(
             actionName = "Restore",
-            successMessage = "Restore completed."
+            successMessageResId = R.string.settings_operation_restore_success
         ) {
             recordRepository.restore()
         }
@@ -97,14 +104,14 @@ class SettingsViewModel @Inject constructor(
 
     private suspend fun executeOperation(
         actionName: String,
-        successMessage: String,
+        successMessageResId: Int,
         action: suspend () -> Unit
     ) {
         _uiState.update {
             it.copy(
                 isLoading = true,
-                errorMessage = null,
-                operationMessage = null
+                errorMessageResId = null,
+                operationMessageResId = null
             )
         }
         runCatching {
@@ -113,8 +120,8 @@ class SettingsViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    errorMessage = null,
-                    operationMessage = successMessage
+                    errorMessageResId = null,
+                    operationMessageResId = successMessageResId
                 )
             }
         }.onFailure { error ->
@@ -122,8 +129,8 @@ class SettingsViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    errorMessage = null,
-                    operationMessage = error.message ?: "$actionName failed."
+                    errorMessageResId = null,
+                    operationMessageResId = R.string.settings_operation_failed
                 )
             }
         }
@@ -135,10 +142,10 @@ class SettingsViewModel @Inject constructor(
                 appContext.packageName,
                 PackageManager.PackageInfoFlags.of(0)
             )
-            "${packageInfo.versionName ?: "Unknown"} (${packageInfo.longVersionCode})"
+            "${packageInfo.versionName ?: appContext.getString(R.string.common_unknown)} (${packageInfo.longVersionCode})"
         }.getOrElse {
             Timber.e(it, "Failed to resolve app version")
-            "Unknown"
+            appContext.getString(R.string.common_unknown)
         }
     }
 }

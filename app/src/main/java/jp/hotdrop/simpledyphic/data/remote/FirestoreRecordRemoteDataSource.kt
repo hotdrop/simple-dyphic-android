@@ -7,7 +7,9 @@ import jp.hotdrop.simpledyphic.data.mapper.toRawCondition
 import jp.hotdrop.simpledyphic.model.Record
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class FirestoreRecordRemoteDataSource @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {

@@ -1,5 +1,6 @@
 package jp.hotdrop.simpledyphic.ui.record
 
+import androidx.annotation.StringRes
 import java.time.LocalDate
 import jp.hotdrop.simpledyphic.model.ConditionType
 
@@ -20,6 +21,6 @@ data class RecordEditUiState(
     val showHealthOverwriteDialog: Boolean = false,
     val isSaving: Boolean = false,
     val isHealthSyncing: Boolean = false,
-    val healthConnectMessage: String? = null,
-    val errorMessage: String? = null
+    @param:StringRes val healthConnectMessageResId: Int? = null,
+    @param:StringRes val errorMessageResId: Int? = null
 )

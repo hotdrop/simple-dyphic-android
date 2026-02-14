@@ -37,8 +37,7 @@ class HealthConnectRepository @Inject constructor(
     }
 
     suspend fun readDailySummary(date: LocalDate): DailyHealthSummary {
-        val client = healthConnectClientOrNull()
-            ?: throw IllegalStateException("Health Connect is not available.")
+        val client = healthConnectClientOrNull() ?: throw IllegalStateException("Health Connect is not available.")
         val grantedPermissions = client.permissionController.getGrantedPermissions()
         if (!grantedPermissions.containsAll(REQUIRED_PERMISSIONS)) {
             throw SecurityException("Health Connect permissions are missing.")
@@ -69,7 +68,7 @@ class HealthConnectRepository @Inject constructor(
         )
     }
 
-    private suspend fun healthConnectClientOrNull(): HealthConnectClient? {
+    private fun healthConnectClientOrNull(): HealthConnectClient? {
         return if (getStatus() == HealthConnectStatus.AVAILABLE) {
             HealthConnectClient.getOrCreate(context)
         } else {

@@ -75,8 +75,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     when {
-        uiState.errorMessage != null -> ErrorContent(
-            message = uiState.errorMessage,
+        uiState.errorMessageResId != null -> ErrorContent(
+            message = stringResource(uiState.errorMessageResId),
             onRetry = onRetry,
             modifier = modifier
         )
@@ -161,10 +161,10 @@ private fun SettingsContent(
                 }
             }
 
-            uiState.operationMessage?.let { message ->
+            uiState.operationMessageResId?.let { messageResId ->
                 item {
                     ListItem(
-                        headlineContent = { Text(text = message) },
+                        headlineContent = { Text(text = stringResource(messageResId)) },
                         trailingContent = {
                             OutlinedButton(onClick = onOperationMessageDismiss) {
                                 Text(text = stringResource(R.string.settings_message_close))

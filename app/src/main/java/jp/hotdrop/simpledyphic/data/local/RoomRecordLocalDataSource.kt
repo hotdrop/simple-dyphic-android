@@ -5,7 +5,9 @@ import jp.hotdrop.simpledyphic.data.local.db.toEntity
 import jp.hotdrop.simpledyphic.data.local.db.toModel
 import jp.hotdrop.simpledyphic.model.Record
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class RoomRecordLocalDataSource @Inject constructor(
     private val recordDao: RecordDao
 ) {
