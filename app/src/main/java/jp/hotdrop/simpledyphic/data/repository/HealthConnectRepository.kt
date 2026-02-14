@@ -17,7 +17,7 @@ import javax.inject.Singleton
 
 @Singleton
 class HealthConnectRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
 
     fun requiredPermissions(): Set<String> = REQUIRED_PERMISSIONS
