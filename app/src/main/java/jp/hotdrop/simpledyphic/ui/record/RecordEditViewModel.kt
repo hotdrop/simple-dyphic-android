@@ -34,6 +34,7 @@ class RecordEditViewModel @Inject constructor(
     private val recordId: Int = parseRecordId(savedStateHandle)
     private var baseRecord: Record = Record.createEmpty(DyphicId.idToDate(recordId))
     private var hasRequestedInitialHealthSync: Boolean = false
+    private var changeFlags: ChangeFlags = ChangeFlags()
 
     private val _uiState = MutableStateFlow(
         RecordEditUiState(
@@ -47,35 +48,35 @@ class RecordEditViewModel @Inject constructor(
     private val loadRecordJob: Job = loadRecord()
 
     fun onBreakfastChanged(value: String) {
-        updateInput { it.copy(breakfast = value, errorMessageResId = null) }
+        updateInput(InputField.BREAKFAST) { it.copy(breakfast = value, errorMessageResId = null) }
     }
 
     fun onLunchChanged(value: String) {
-        updateInput { it.copy(lunch = value, errorMessageResId = null) }
+        updateInput(InputField.LUNCH) { it.copy(lunch = value, errorMessageResId = null) }
     }
 
     fun onDinnerChanged(value: String) {
-        updateInput { it.copy(dinner = value, errorMessageResId = null) }
+        updateInput(InputField.DINNER) { it.copy(dinner = value, errorMessageResId = null) }
     }
 
     fun onConditionTypeChanged(value: ConditionType) {
-        updateInput { it.copy(conditionType = value, errorMessageResId = null) }
+        updateInput(InputField.CONDITION_TYPE) { it.copy(conditionType = value, errorMessageResId = null) }
     }
 
     fun onConditionMemoChanged(value: String) {
-        updateInput { it.copy(conditionMemo = value, errorMessageResId = null) }
+        updateInput(InputField.CONDITION_MEMO) { it.copy(conditionMemo = value, errorMessageResId = null) }
     }
 
     fun onIsToiletChanged(value: Boolean) {
-        updateInput { it.copy(isToilet = value, errorMessageResId = null) }
+        updateInput(InputField.IS_TOILET) { it.copy(isToilet = value, errorMessageResId = null) }
     }
 
     fun onRingfitKcalChanged(value: String) {
-        updateInput { it.copy(ringfitKcalInput = value, errorMessageResId = null) }
+        updateInput(InputField.RINGFIT_KCAL) { it.copy(ringfitKcalInput = value, errorMessageResId = null) }
     }
 
     fun onRingfitKmChanged(value: String) {
-        updateInput { it.copy(ringfitKmInput = value, errorMessageResId = null) }
+        updateInput(InputField.RINGFIT_KM) { it.copy(ringfitKmInput = value, errorMessageResId = null) }
     }
 
     fun onBackRequested(onClose: () -> Unit) {
@@ -223,6 +224,7 @@ class RecordEditViewModel @Inject constructor(
                 ringfitKm = km
             )
             if (target == baseRecord) {
+                resetChangeFlags()
                 _uiState.update { it.copy(isSaving = false, errorMessageResId = null, hasChanges = false) }
                 onComplete(false)
                 return@launch
@@ -231,6 +233,7 @@ class RecordEditViewModel @Inject constructor(
             when (val saveResult = dispatcherIO { recordRepository.save(target) }) {
                 AppCompletable.Complete -> {
                     baseRecord = target
+                    resetChangeFlags()
                     _uiState.update { it.copy(isSaving = false, errorMessageResId = null, hasChanges = false) }
                     onComplete(true)
                 }
@@ -265,7 +268,7 @@ class RecordEditViewModel @Inject constructor(
     }
 
     private fun applyHealthSummary(summary: DailyHealthSummary) {
-        updateInput {
+        updateInput(InputField.STEP_COUNT, InputField.HEALTH_KCAL) {
             it.copy(
                 stepCount = summary.stepCount,
                 healthKcal = summary.burnedKcal,
@@ -282,6 +285,7 @@ class RecordEditViewModel @Inject constructor(
                 is AppResult.Success -> {
                     val record = recordResult.value
                     baseRecord = record
+                    resetChangeFlags()
                     _uiState.update {
                         it.copy(
                             recordDate = record.date,
@@ -302,6 +306,7 @@ class RecordEditViewModel @Inject constructor(
                 is AppResult.Failure -> {
                     if (recordResult.error is NoSuchElementException) {
                         baseRecord = Record.createEmpty(DyphicId.idToDate(recordId))
+                        resetChangeFlags()
                         _uiState.update {
                             it.copy(
                                 recordDate = baseRecord.date,
@@ -329,35 +334,55 @@ class RecordEditViewModel @Inject constructor(
         }
     }
 
-    private fun updateInput(transform: (RecordEditUiState) -> RecordEditUiState) {
+    private fun updateInput(
+        vararg changedFields: InputField,
+        transform: (RecordEditUiState) -> RecordEditUiState
+    ) {
         _uiState.update { current ->
             val updated = transform(current)
-            updated.copy(hasChanges = hasChangesFromState(updated))
+            changeFlags = recalculateChangeFlags(
+                current = changeFlags,
+                uiState = updated,
+                changedFields = changedFields
+            )
+            updated.copy(hasChanges = changeFlags.hasChanges)
         }
     }
 
-    private fun hasChangesFromState(uiState: RecordEditUiState): Boolean {
-        val mealsChanged =
-            baseRecord.breakfast.orEmpty() != uiState.breakfast ||
-                baseRecord.lunch.orEmpty() != uiState.lunch ||
-                baseRecord.dinner.orEmpty() != uiState.dinner
-        val conditionChanged =
-            baseRecord.condition != uiState.conditionType ||
-                baseRecord.conditionMemo.orEmpty() != uiState.conditionMemo
-        val isToiletChanged = baseRecord.isToilet != uiState.isToilet
-        val stepsChanged = baseRecord.stepCount != uiState.stepCount
-        val healthKcalChanged = baseRecord.healthKcal != uiState.healthKcal
-        val kcalChanged = when (val parsed = parseNumberInput(uiState.ringfitKcalInput)) {
-            is ParsedNumber.Invalid -> true
-            is ParsedNumber.Valid -> parsed.value != baseRecord.ringfitKcal
+    private fun recalculateChangeFlags(
+        current: ChangeFlags,
+        uiState: RecordEditUiState,
+        changedFields: Array<out InputField>
+    ): ChangeFlags {
+        var updatedFlags = current
+        changedFields.forEach { field ->
+            updatedFlags = updatedFlags.with(field, isFieldChanged(field, uiState))
         }
-        val kmChanged = when (val parsed = parseNumberInput(uiState.ringfitKmInput)) {
-            is ParsedNumber.Invalid -> true
-            is ParsedNumber.Valid -> parsed.value != baseRecord.ringfitKm
+        return updatedFlags
+    }
+
+    private fun isFieldChanged(field: InputField, uiState: RecordEditUiState): Boolean =
+        when (field) {
+            InputField.BREAKFAST -> baseRecord.breakfast.orEmpty() != uiState.breakfast
+            InputField.LUNCH -> baseRecord.lunch.orEmpty() != uiState.lunch
+            InputField.DINNER -> baseRecord.dinner.orEmpty() != uiState.dinner
+            InputField.CONDITION_TYPE -> baseRecord.condition != uiState.conditionType
+            InputField.CONDITION_MEMO -> baseRecord.conditionMemo.orEmpty() != uiState.conditionMemo
+            InputField.IS_TOILET -> baseRecord.isToilet != uiState.isToilet
+            InputField.STEP_COUNT -> baseRecord.stepCount != uiState.stepCount
+            InputField.HEALTH_KCAL -> baseRecord.healthKcal != uiState.healthKcal
+            InputField.RINGFIT_KCAL -> when (val parsed = parseNumberInput(uiState.ringfitKcalInput)) {
+                is ParsedNumber.Invalid -> true
+                is ParsedNumber.Valid -> parsed.value != baseRecord.ringfitKcal
+            }
+            InputField.RINGFIT_KM -> when (val parsed = parseNumberInput(uiState.ringfitKmInput)) {
+                is ParsedNumber.Invalid -> true
+                is ParsedNumber.Valid -> parsed.value != baseRecord.ringfitKm
+            }
         }
 
-        return mealsChanged || conditionChanged || isToiletChanged || stepsChanged ||
-            healthKcalChanged || kcalChanged || kmChanged
+    private fun resetChangeFlags() {
+        changeFlags = ChangeFlags()
     }
 
     private fun parseNumberInput(value: String): ParsedNumber {
@@ -370,6 +395,50 @@ class RecordEditViewModel @Inject constructor(
     private sealed interface ParsedNumber {
         data class Valid(val value: Double?) : ParsedNumber
         data object Invalid : ParsedNumber
+    }
+
+    private enum class InputField {
+        BREAKFAST,
+        LUNCH,
+        DINNER,
+        CONDITION_TYPE,
+        CONDITION_MEMO,
+        IS_TOILET,
+        STEP_COUNT,
+        HEALTH_KCAL,
+        RINGFIT_KCAL,
+        RINGFIT_KM
+    }
+
+    private data class ChangeFlags(
+        val breakfast: Boolean = false,
+        val lunch: Boolean = false,
+        val dinner: Boolean = false,
+        val conditionType: Boolean = false,
+        val conditionMemo: Boolean = false,
+        val isToilet: Boolean = false,
+        val stepCount: Boolean = false,
+        val healthKcal: Boolean = false,
+        val ringfitKcal: Boolean = false,
+        val ringfitKm: Boolean = false
+    ) {
+        val hasChanges: Boolean
+            get() = breakfast || lunch || dinner || conditionType || conditionMemo ||
+                isToilet || stepCount || healthKcal || ringfitKcal || ringfitKm
+
+        fun with(field: InputField, changed: Boolean): ChangeFlags =
+            when (field) {
+                InputField.BREAKFAST -> copy(breakfast = changed)
+                InputField.LUNCH -> copy(lunch = changed)
+                InputField.DINNER -> copy(dinner = changed)
+                InputField.CONDITION_TYPE -> copy(conditionType = changed)
+                InputField.CONDITION_MEMO -> copy(conditionMemo = changed)
+                InputField.IS_TOILET -> copy(isToilet = changed)
+                InputField.STEP_COUNT -> copy(stepCount = changed)
+                InputField.HEALTH_KCAL -> copy(healthKcal = changed)
+                InputField.RINGFIT_KCAL -> copy(ringfitKcal = changed)
+                InputField.RINGFIT_KM -> copy(ringfitKm = changed)
+            }
     }
 
     sealed interface RecordEditEffect {

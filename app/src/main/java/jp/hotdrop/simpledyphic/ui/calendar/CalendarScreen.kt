@@ -153,6 +153,7 @@ private fun CalendarContent(
         firstVisibleMonth = initialVisibleMonth,
         firstDayOfWeek = firstDayOfWeek
     )
+    val today = LocalDate.now()
     var pendingMonth by remember { mutableStateOf<YearMonth?>(null) }
 
     LaunchedEffect(calendarState) {
@@ -246,10 +247,13 @@ private fun CalendarContent(
                     state = calendarState,
                     contentPadding = PaddingValues(vertical = 4.dp),
                     dayContent = { day ->
+                        val dayRecord = uiState.recordsByDate[day.date]
                         DayCell(
                             day = day,
                             selectedDate = uiState.selectedDate,
-                            record = uiState.recordsByDate[day.date],
+                            today = today,
+                            record = dayRecord,
+                            hasMarkers = day.date in uiState.datesWithMarkers,
                             onTap = { date ->
                                 val monthOfDate = YearMonth.from(date)
                                 if (monthOfDate != uiState.currentMonth) {
@@ -278,16 +282,14 @@ private fun CalendarContent(
 private fun DayCell(
     day: CalendarDay,
     selectedDate: LocalDate,
+    today: LocalDate,
     record: Record?,
+    hasMarkers: Boolean,
     onTap: (LocalDate) -> Unit
 ) {
     val isSelected = day.date == selectedDate
     val isCurrentMonth = day.position == DayPosition.MonthDate
-    val isToday = day.date == LocalDate.now()
-    val hasMarkers = record?.let {
-        it.isToilet || it.condition != null || (it.ringfitKcal ?: 0.0) > 0.0 ||
-            (it.ringfitKm ?: 0.0) > 0.0 || (it.stepCount ?: 0) >= 7000
-    } ?: false
+    val isToday = day.date == today
     val textColor = when {
         isSelected -> MaterialTheme.colorScheme.onPrimary
         isToday -> MaterialTheme.colorScheme.onPrimary
@@ -507,7 +509,8 @@ private fun CalendarScreenPreview() {
         calendarEndMonth = YearMonth.of(2027, 12),
         currentMonth = YearMonth.from(selectedDate),
         selectedDate = selectedDate,
-        recordsByDate = mapOf(selectedDate to previewRecord)
+        recordsByDate = mapOf(selectedDate to previewRecord),
+        datesWithMarkers = setOf(selectedDate)
     )
 
     SimpleDyphicTheme {

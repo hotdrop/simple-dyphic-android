@@ -12,7 +12,8 @@ data class CalendarUiState(
     val calendarEndMonth: YearMonth = YearMonth.now().plusYears(2),
     val currentMonth: YearMonth = YearMonth.now(),
     val selectedDate: LocalDate = LocalDate.now(),
-    val recordsByDate: Map<LocalDate, Record> = emptyMap()
+    val recordsByDate: Map<LocalDate, Record> = emptyMap(),
+    val datesWithMarkers: Set<LocalDate> = emptySet()
 ) {
     val selectedRecord: Record?
         get() = recordsByDate[selectedDate]

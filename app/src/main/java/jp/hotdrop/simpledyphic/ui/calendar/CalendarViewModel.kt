@@ -8,6 +8,7 @@ import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
 import jp.hotdrop.simpledyphic.model.AppResult
 import jp.hotdrop.simpledyphic.model.DyphicId
+import jp.hotdrop.simpledyphic.model.Record
 import jp.hotdrop.simpledyphic.ui.BaseViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,11 +69,17 @@ class CalendarViewModel @Inject constructor(
                 when (result) {
                     is AppResult.Success -> {
                         val recordsByDate = result.value.associateBy { record -> record.date }
+                        val datesWithMarkers = result.value
+                            .asSequence()
+                            .filter { record -> record.hasCalendarMarker() }
+                            .map { record -> record.date }
+                            .toSet()
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 errorMessageResId = null,
-                                recordsByDate = recordsByDate
+                                recordsByDate = recordsByDate,
+                                datesWithMarkers = datesWithMarkers
                             )
                         }
                     }
@@ -88,5 +95,10 @@ class CalendarViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun Record.hasCalendarMarker(): Boolean {
+        return isToilet || condition != null || (ringfitKcal ?: 0.0) > 0.0 ||
+            (ringfitKm ?: 0.0) > 0.0 || (stepCount ?: 0) >= 7000
     }
 }

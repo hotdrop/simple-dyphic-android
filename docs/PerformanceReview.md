@@ -67,24 +67,25 @@
   - one-shot effectを `SharedFlow(replay=0)` から `Channel(BUFFERED)` + `receiveAsFlow()` に変更。
   - `onScreenEntered()` と `effects.collect` を別 `LaunchedEffect` に分離。
 
+### 8. [Done] RecordEditの差分計算を増分更新へ変更
+- Files:
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/record/RecordEditViewModel.kt`
+- 内容:
+  - `hasChangesFromState()` の全項目比較を廃止し、入力種別ごとの差分フラグを増分更新する方式へ変更。
+  - 数値パース（RingFit kcal/km）は該当入力変更時のみ評価し、入力ごとの比較コストを削減。
+
+### 9. [Done] Calendar日セルの判定処理を前計算化
+- Files:
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarViewModel.kt`
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarUiState.kt`
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt`
+- 内容:
+  - `recordsByDate` 更新時にマーカー対象日 (`datesWithMarkers`) をViewModelで前計算。
+  - `DayCell` は `today` を親から受け取り、セル内の `LocalDate.now()` 呼び出しを削減。
+  - セル側のマーカー判定を `Set` 参照に置き換え、再描画時の計算負荷を軽量化。
+
 ## 残課題（性能観点）
-
-### 1. [P3] RecordEditで入力ごとに差分計算コストが高い
-- File: `app/src/main/java/jp/hotdrop/simpledyphic/ui/record/RecordEditViewModel.kt:332`
-- 問題:
-  - すべての入力変更で `hasChangesFromState()` が全項目比較＋数値パースを実行している。
-  - 入力頻度の高い画面で不要なCPU負荷になりやすい。
-- 推奨:
-  - 変更フラグを入力種別ごとに増分更新するか、重い比較処理を必要時（保存前など）へ遅延する。
-
-### 2. [P3] Calendarの日セルで毎回日付判定とマーカー判定を繰り返している
-- File: `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt:286`
-- 問題:
-  - `DayCell` 毎に `LocalDate.now()` 呼び出しとマーカー条件評価を実施。
-  - 月切替や再描画時にセル数分の計算が発生する。
-- 推奨:
-  - `today` を上位で一度だけ計算して渡す。
-  - マーカー有無を `recordsByDate` 構築時に前計算し、セル側の判定を軽量化する。
+- 現時点で対応対象なし（本ドキュメント記載のP3課題は完了）。
 
 ## 検証メモ
 - 実行コマンド:
