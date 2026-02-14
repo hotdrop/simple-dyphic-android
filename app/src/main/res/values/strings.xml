@@ -20,8 +20,8 @@
     <string name="settings_license_dialog_body">このアプリはOSSを含んでいます。</string>
     <string name="settings_license_dialog_close">閉じる</string>
     <string name="settings_signed_out_placeholder">ー</string>
-    <string name="settings_sign_in">SignIn with Google</string>
-    <string name="settings_sign_out">SignOut from Google</string>
+    <string name="settings_sign_in">Sign In with Google</string>
+    <string name="settings_sign_out">Sign Out from Google</string>
     <string name="settings_backup_title">バックアップ</string>
     <string name="settings_restore_title">リストア</string>
     <string name="settings_backup_summary">ローカルデータをFirestoreへバックアップ</string>
