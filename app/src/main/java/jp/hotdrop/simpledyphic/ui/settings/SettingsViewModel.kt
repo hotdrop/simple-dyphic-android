@@ -10,7 +10,6 @@ import jp.hotdrop.simpledyphic.data.repository.AccountRepository
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
 import jp.hotdrop.simpledyphic.model.AppCompletable
 import jp.hotdrop.simpledyphic.model.AppResult
-import jp.hotdrop.simpledyphic.model.UserAccount
 import jp.hotdrop.simpledyphic.ui.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,10 +65,13 @@ class SettingsViewModel @Inject constructor(
         launch {
             when (val result = dispatcherIO { accountRepository.signInWithGoogle() }) {
                 is AppResult.Success -> {
-                    applyAccount(result.value)
+                    val account = result.value
                     _uiState.update {
                         it.copy(
                             isLoading = false,
+                            isSignedIn = true,
+                            accountName = account.name,
+                            accountEmail = account.email,
                             operationMessageResId = R.string.settings_operation_sign_in_success
                         )
                     }
@@ -230,16 +232,6 @@ class SettingsViewModel @Inject constructor(
         } catch (error: Throwable) {
             Timber.e(error, "Failed to resolve app version")
             appContext.getString(R.string.common_unknown)
-        }
-    }
-
-    private fun applyAccount(account: UserAccount) {
-        _uiState.update {
-            it.copy(
-                isSignedIn = true,
-                accountName = account.name,
-                accountEmail = account.email
-            )
         }
     }
 }

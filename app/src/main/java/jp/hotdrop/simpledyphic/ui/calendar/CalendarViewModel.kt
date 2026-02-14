@@ -4,6 +4,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
+import java.util.LinkedHashMap
+import java.util.LinkedHashSet
 import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
 import jp.hotdrop.simpledyphic.model.AppResult
@@ -68,12 +70,15 @@ class CalendarViewModel @Inject constructor(
             recordRepository.observeAll().collect { result ->
                 when (result) {
                     is AppResult.Success -> {
-                        val recordsByDate = result.value.associateBy { record -> record.date }
-                        val datesWithMarkers = result.value
-                            .asSequence()
-                            .filter { record -> record.hasCalendarMarker() }
-                            .map { record -> record.date }
-                            .toSet()
+                        val recordsByDate = LinkedHashMap<LocalDate, Record>(result.value.size)
+                        val datesWithMarkers = LinkedHashSet<LocalDate>(result.value.size)
+                        result.value.forEach { record ->
+                            val date = record.date
+                            recordsByDate[date] = record
+                            if (record.hasCalendarMarker()) {
+                                datesWithMarkers += date
+                            }
+                        }
                         _uiState.update {
                             it.copy(
                                 isLoading = false,

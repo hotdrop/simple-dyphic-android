@@ -84,8 +84,29 @@
   - `DayCell` は `today` を親から受け取り、セル内の `LocalDate.now()` 呼び出しを削減。
   - セル側のマーカー判定を `Set` 参照に置き換え、再描画時の計算負荷を軽量化。
 
+### 10. [Done] Settingsのサインイン成功時のUiState更新を1回に統合
+- Files:
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/SettingsViewModel.kt`
+- 内容:
+  - サインイン成功時の `isSignedIn/accountName/accountEmail/isLoading/operationMessage` を単一の `_uiState.update` に統合。
+  - 不要になった `applyAccount()` を削除し、再コンポーズ発火を1回削減。
+
+### 11. [Done] Calendarの派生データ生成を1パス化
+- Files:
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarViewModel.kt`
+- 内容:
+  - `recordsByDate` と `datesWithMarkers` を別走査せず、1回のループで同時構築するよう変更。
+  - DB更新ごとのCPU/割り当てコストを削減。
+
+### 12. [Done] RecordEditの固定3カード領域をLazyRowからRowへ変更
+- Files:
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/record/RecordEditScreen.kt`
+- 内容:
+  - `MealArea` を `LazyRow` から `Row + horizontalScroll` に変更。
+  - 固定要素に対するlazy管理コスト（subcomposition/measure）を削減。
+
 ## 残課題（性能観点）
-- 現時点で対応対象なし（本ドキュメント記載のP3課題は完了）。
+- 現時点で対応対象なし。
 
 ## 検証メモ
 - 実行コマンド:

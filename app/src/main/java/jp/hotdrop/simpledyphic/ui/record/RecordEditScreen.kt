@@ -14,11 +14,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -308,34 +308,29 @@ private fun MealArea(
     onDinnerChanged: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyRow(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(230.dp),
+            .height(230.dp)
+            .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        item {
-            MealCard(
-                iconResId = R.drawable.ic_breakfast,
-                value = breakfast,
-                onValueChange = onBreakfastChanged,
-                textFieldTag = "record_breakfast_input"
-            )
-        }
-        item {
-            MealCard(
-                iconResId = R.drawable.ic_lunch,
-                value = lunch,
-                onValueChange = onLunchChanged
-            )
-        }
-        item {
-            MealCard(
-                iconResId = R.drawable.ic_dinner,
-                value = dinner,
-                onValueChange = onDinnerChanged
-            )
-        }
+        MealCard(
+            iconResId = R.drawable.ic_breakfast,
+            value = breakfast,
+            onValueChange = onBreakfastChanged,
+            textFieldTag = "record_breakfast_input"
+        )
+        MealCard(
+            iconResId = R.drawable.ic_lunch,
+            value = lunch,
+            onValueChange = onLunchChanged
+        )
+        MealCard(
+            iconResId = R.drawable.ic_dinner,
+            value = dinner,
+            onValueChange = onDinnerChanged
+        )
     }
 }
 
