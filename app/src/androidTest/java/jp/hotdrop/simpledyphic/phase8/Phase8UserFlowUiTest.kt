@@ -12,12 +12,14 @@ import jp.hotdrop.simpledyphic.ui.calendar.CalendarScreen
 import jp.hotdrop.simpledyphic.ui.calendar.CalendarUiState
 import jp.hotdrop.simpledyphic.ui.record.RecordEditScreen
 import jp.hotdrop.simpledyphic.ui.record.RecordEditUiState
+import jp.hotdrop.simpledyphic.ui.settings.SettingsDataSyncAction
 import jp.hotdrop.simpledyphic.ui.settings.SettingsScreen
 import jp.hotdrop.simpledyphic.ui.settings.SettingsUiState
 import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
 import java.time.LocalDate
 import java.time.YearMonth
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -91,30 +93,47 @@ class Phase8UserFlowUiTest {
 
     @Test
     fun settingsBackupFlow_signedInUserCanTapBackup() {
+        var uiState by mutableStateOf(
+            SettingsUiState(
+                appVersion = "1.0 (1)",
+                isSignedIn = true,
+                accountName = "Google User",
+                accountEmail = "user@example.com"
+            )
+        )
         var backupRequested = false
 
         composeTestRule.setContent {
             SimpleDyphicTheme {
                 SettingsScreen(
-                    uiState = SettingsUiState(
-                        appVersion = "1.0 (1)",
-                        isSignedIn = true,
-                        accountName = "Google User",
-                        accountEmail = "user@example.com"
-                    ),
-                    onRetry = {},
+                    uiState = uiState,
                     onLicenseClick = {},
                     onLicenseDismiss = {},
-                    onOperationMessageDismiss = {},
                     onSignInClick = {},
                     onSignOutClick = {},
-                    onBackupClick = { backupRequested = true },
-                    onRestoreClick = {}
+                    onBackupClick = {
+                        uiState = uiState.copy(pendingDataSyncAction = SettingsDataSyncAction.Backup)
+                    },
+                    onRestoreClick = {
+                        uiState = uiState.copy(pendingDataSyncAction = SettingsDataSyncAction.Restore)
+                    },
+                    onDataSyncActionConfirm = {
+                        backupRequested = true
+                        uiState = uiState.copy(pendingDataSyncAction = null)
+                    },
+                    onDataSyncActionDismiss = {
+                        uiState = uiState.copy(pendingDataSyncAction = null)
+                    }
                 )
             }
         }
 
         composeTestRule.onNodeWithTag("settings_backup_item").performClick()
+        composeTestRule.runOnIdle {
+            assertEquals(SettingsDataSyncAction.Backup, uiState.pendingDataSyncAction)
+            assertFalse(backupRequested)
+        }
+        composeTestRule.onNodeWithTag("settings_data_sync_confirm_button").performClick()
         composeTestRule.runOnIdle {
             assertTrue(backupRequested)
         }

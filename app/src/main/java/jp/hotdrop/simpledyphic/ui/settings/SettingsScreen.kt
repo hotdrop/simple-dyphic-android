@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import jp.hotdrop.simpledyphic.R
-import jp.hotdrop.simpledyphic.ui.components.ErrorContent
 import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
 
 @Composable
@@ -47,48 +47,39 @@ fun SettingsRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     SettingsScreen(
         uiState = uiState,
-        onRetry = viewModel::onRetry,
         onLicenseClick = viewModel::onLicenseClick,
         onLicenseDismiss = viewModel::onLicenseDismiss,
-        onOperationMessageDismiss = viewModel::onOperationMessageDismiss,
         onSignInClick = viewModel::onSignInClick,
         onSignOutClick = viewModel::onSignOutClick,
         onBackupClick = viewModel::onBackupClick,
-        onRestoreClick = viewModel::onRestoreClick
+        onRestoreClick = viewModel::onRestoreClick,
+        onDataSyncActionConfirm = viewModel::onDataSyncActionConfirm,
+        onDataSyncActionDismiss = viewModel::onDataSyncActionDismiss
     )
 }
 
 @Composable
 fun SettingsScreen(
     uiState: SettingsUiState,
-    onRetry: () -> Unit,
     onLicenseClick: () -> Unit,
     onLicenseDismiss: () -> Unit,
-    onOperationMessageDismiss: () -> Unit,
     onSignInClick: () -> Unit,
     onSignOutClick: () -> Unit,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
+    onDataSyncActionConfirm: () -> Unit,
+    onDataSyncActionDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    when {
-        uiState.errorMessageResId != null -> ErrorContent(
-            message = stringResource(uiState.errorMessageResId),
-            onRetry = onRetry,
-            modifier = modifier
-        )
-
-        else -> SettingsContent(
-            uiState = uiState,
-            onLicenseClick = onLicenseClick,
-            onOperationMessageDismiss = onOperationMessageDismiss,
-            onSignInClick = onSignInClick,
-            onSignOutClick = onSignOutClick,
-            onBackupClick = onBackupClick,
-            onRestoreClick = onRestoreClick,
-            modifier = modifier
-        )
-    }
+    SettingsContent(
+        uiState = uiState,
+        onLicenseClick = onLicenseClick,
+        onSignInClick = onSignInClick,
+        onSignOutClick = onSignOutClick,
+        onBackupClick = onBackupClick,
+        onRestoreClick = onRestoreClick,
+        modifier = modifier
+    )
 
     if (uiState.showLicenseDialog) {
         AlertDialog(
@@ -113,6 +104,38 @@ fun SettingsScreen(
             }
         )
     }
+
+    uiState.pendingDataSyncAction?.let { action ->
+        val titleResId = when (action) {
+            SettingsDataSyncAction.Backup -> R.string.settings_backup_confirm_dialog_title
+            SettingsDataSyncAction.Restore -> R.string.settings_restore_confirm_dialog_title
+        }
+        val messageResId = when (action) {
+            SettingsDataSyncAction.Backup -> R.string.settings_backup_confirm_dialog_message
+            SettingsDataSyncAction.Restore -> R.string.settings_restore_confirm_dialog_message
+        }
+        AlertDialog(
+            onDismissRequest = onDataSyncActionDismiss,
+            title = { Text(text = stringResource(titleResId)) },
+            text = { Text(text = stringResource(messageResId)) },
+            confirmButton = {
+                Button(
+                    onClick = onDataSyncActionConfirm,
+                    modifier = Modifier.testTag("settings_data_sync_confirm_button")
+                ) {
+                    Text(text = stringResource(R.string.settings_data_sync_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = onDataSyncActionDismiss,
+                    modifier = Modifier.testTag("settings_data_sync_cancel_button")
+                ) {
+                    Text(text = stringResource(R.string.settings_data_sync_cancel))
+                }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -120,26 +143,12 @@ fun SettingsScreen(
 private fun SettingsContent(
     uiState: SettingsUiState,
     onLicenseClick: () -> Unit,
-    onOperationMessageDismiss: () -> Unit,
     onSignInClick: () -> Unit,
     onSignOutClick: () -> Unit,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val accountName = uiState.accountName
-        ?: if (uiState.isSignedIn) {
-            stringResource(R.string.settings_signed_in_name_placeholder)
-        } else {
-            stringResource(R.string.settings_signed_out_placeholder)
-        }
-    val accountEmail = uiState.accountEmail
-        ?: if (uiState.isSignedIn) {
-            stringResource(R.string.settings_signed_in_email_placeholder)
-        } else {
-            stringResource(R.string.settings_signed_out_placeholder)
-        }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -158,24 +167,10 @@ private fun SettingsContent(
                 }
             }
 
-            uiState.operationMessageResId?.let { messageResId ->
-                item {
-                    ListItem(
-                        headlineContent = { Text(text = stringResource(messageResId)) },
-                        trailingContent = {
-                            OutlinedButton(onClick = onOperationMessageDismiss) {
-                                Text(text = stringResource(R.string.settings_message_close))
-                            }
-                        }
-                    )
-                    HorizontalDivider()
-                }
-            }
-
             item {
                 ListItem(
-                    headlineContent = { Text(text = accountName) },
-                    supportingContent = { Text(text = accountEmail) },
+                    headlineContent = { Text(text = uiState.accountName ?: stringResource(R.string.settings_signed_out_placeholder)) },
+                    supportingContent = { Text(text = uiState.accountEmail ?: stringResource(R.string.settings_signed_out_placeholder)) },
                     leadingContent = {
                         Icon(
                             imageVector = Icons.Outlined.AccountCircle,
@@ -294,14 +289,14 @@ private fun SettingsScreenSignedOutPreview() {
                 appVersion = "1.0 (1)",
                 isSignedIn = false
             ),
-            onRetry = {},
             onLicenseClick = {},
             onLicenseDismiss = {},
-            onOperationMessageDismiss = {},
             onSignInClick = {},
             onSignOutClick = {},
             onBackupClick = {},
-            onRestoreClick = {}
+            onRestoreClick = {},
+            onDataSyncActionConfirm = {},
+            onDataSyncActionDismiss = {}
         )
     }
 }
@@ -317,14 +312,38 @@ private fun SettingsScreenSignedInPreview() {
                 accountName = "Google User",
                 accountEmail = "user@example.com"
             ),
-            onRetry = {},
             onLicenseClick = {},
             onLicenseDismiss = {},
-            onOperationMessageDismiss = {},
             onSignInClick = {},
             onSignOutClick = {},
             onBackupClick = {},
-            onRestoreClick = {}
+            onRestoreClick = {},
+            onDataSyncActionConfirm = {},
+            onDataSyncActionDismiss = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SettingsScreenBackupConfirmPreview() {
+    SimpleDyphicTheme {
+        SettingsScreen(
+            uiState = SettingsUiState(
+                appVersion = "1.0 (1)",
+                isSignedIn = true,
+                accountName = "Google User",
+                accountEmail = "user@example.com",
+                pendingDataSyncAction = SettingsDataSyncAction.Backup
+            ),
+            onLicenseClick = {},
+            onLicenseDismiss = {},
+            onSignInClick = {},
+            onSignOutClick = {},
+            onBackupClick = {},
+            onRestoreClick = {},
+            onDataSyncActionConfirm = {},
+            onDataSyncActionDismiss = {}
         )
     }
 }

@@ -31,16 +31,6 @@ class SettingsViewModel @Inject constructor(
         refreshCurrentAccount()
     }
 
-    fun onRetry() {
-        _uiState.update {
-            it.copy(
-                isLoading = false,
-                errorMessageResId = null,
-                operationMessageResId = null
-            )
-        }
-    }
-
     fun onLicenseClick() {
         _uiState.update { it.copy(showLicenseDialog = true) }
     }
@@ -49,17 +39,12 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(showLicenseDialog = false) }
     }
 
-    fun onOperationMessageDismiss() {
-        _uiState.update { it.copy(operationMessageResId = null) }
-    }
-
     fun onSignInClick() {
         if (_uiState.value.isLoading) return
         _uiState.update {
             it.copy(
                 isLoading = true,
-                errorMessageResId = null,
-                operationMessageResId = null
+                pendingDataSyncAction = null
             )
         }
         launch {
@@ -71,18 +56,14 @@ class SettingsViewModel @Inject constructor(
                             isLoading = false,
                             isSignedIn = true,
                             accountName = account.name,
-                            accountEmail = account.email,
-                            operationMessageResId = R.string.settings_operation_sign_in_success
+                            accountEmail = account.email
                         )
                     }
                 }
                 is AppResult.Failure -> {
                     Timber.e(result.error, "Sign-in failed")
                     _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            operationMessageResId = R.string.settings_operation_failed
-                        )
+                        it.copy(isLoading = false)
                     }
                 }
             }
@@ -94,8 +75,7 @@ class SettingsViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 isLoading = true,
-                errorMessageResId = null,
-                operationMessageResId = null
+                pendingDataSyncAction = null
             )
         }
         launch {
@@ -106,19 +86,13 @@ class SettingsViewModel @Inject constructor(
                             isLoading = false,
                             isSignedIn = false,
                             accountName = null,
-                            accountEmail = null,
-                            operationMessageResId = R.string.settings_operation_sign_out_success
+                            accountEmail = null
                         )
                     }
                 }
                 is AppCompletable.Failure -> {
                     Timber.e(result.error, "Sign-out failed")
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            operationMessageResId = R.string.settings_operation_failed
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false) }
                 }
             }
         }
@@ -126,64 +100,31 @@ class SettingsViewModel @Inject constructor(
 
     fun onBackupClick() {
         if (_uiState.value.isLoading) return
-        _uiState.update {
-            it.copy(
-                isLoading = true,
-                errorMessageResId = null,
-                operationMessageResId = null
-            )
-        }
-        launch {
-            when (val result = dispatcherIO { recordRepository.backup() }) {
-                AppCompletable.Complete -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            operationMessageResId = R.string.settings_operation_backup_success
-                        )
-                    }
-                }
-                is AppCompletable.Failure -> {
-                    Timber.e(result.error, "Backup failed")
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            operationMessageResId = R.string.settings_operation_failed
-                        )
-                    }
-                }
-            }
-        }
+        _uiState.update { it.copy(pendingDataSyncAction = SettingsDataSyncAction.Backup) }
     }
 
     fun onRestoreClick() {
         if (_uiState.value.isLoading) return
+        _uiState.update { it.copy(pendingDataSyncAction = SettingsDataSyncAction.Restore) }
+    }
+
+    fun onDataSyncActionDismiss() {
+        _uiState.update { it.copy(pendingDataSyncAction = null) }
+    }
+
+    fun onDataSyncActionConfirm() {
+        val action = _uiState.value.pendingDataSyncAction ?: return
+        if (_uiState.value.isLoading) return
         _uiState.update {
             it.copy(
                 isLoading = true,
-                errorMessageResId = null,
-                operationMessageResId = null
+                pendingDataSyncAction = null
             )
         }
         launch {
-            when (val result = dispatcherIO { recordRepository.restore() }) {
-                AppCompletable.Complete -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            operationMessageResId = R.string.settings_operation_restore_success
-                        )
-                    }
-                }
-                is AppCompletable.Failure -> {
-                    Timber.e(result.error, "Restore failed")
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            operationMessageResId = R.string.settings_operation_failed
-                        )
-                    }
-                }
+            when (action) {
+                SettingsDataSyncAction.Backup -> executeBackup()
+                SettingsDataSyncAction.Restore -> executeRestore()
             }
         }
     }
@@ -192,8 +133,7 @@ class SettingsViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 isLoading = true,
-                errorMessageResId = null,
-                operationMessageResId = null
+                pendingDataSyncAction = null
             )
         }
         launch {
@@ -211,12 +151,7 @@ class SettingsViewModel @Inject constructor(
                 }
                 is AppResult.Failure -> {
                     Timber.e(result.error, "Failed to resolve current account")
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            operationMessageResId = R.string.settings_operation_failed
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false) }
                 }
             }
         }
@@ -232,6 +167,50 @@ class SettingsViewModel @Inject constructor(
         } catch (error: Throwable) {
             Timber.e(error, "Failed to resolve app version")
             appContext.getString(R.string.common_unknown)
+        }
+    }
+
+    private suspend fun executeBackup() {
+        when (val result = dispatcherIO { recordRepository.backup() }) {
+            AppCompletable.Complete -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        pendingDataSyncAction = null
+                    )
+                }
+            }
+            is AppCompletable.Failure -> {
+                Timber.e(result.error, "Backup failed")
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        pendingDataSyncAction = null
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun executeRestore() {
+        when (val result = dispatcherIO { recordRepository.restore() }) {
+            AppCompletable.Complete -> {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        pendingDataSyncAction = null
+                    )
+                }
+            }
+            is AppCompletable.Failure -> {
+                Timber.e(result.error, "Restore failed")
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        pendingDataSyncAction = null
+                    )
+                }
+            }
         }
     }
 }

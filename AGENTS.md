@@ -36,6 +36,8 @@
 - `@Composable` は副作用を最小化し、状態は上位から渡す
 - 画面Composableを追加/更新する場合は、必ず`@Preview`を実装する
 - `@Preview`はViewModel非依存にする（ViewModelのモックは禁止）。`Route`と`Screen`を分離し、Previewは`Screen`を直接描画する
+- 条件分岐で表示されるUI（`if`/`when`/`?.let`で出るエラー、ダイアログ、ローディング、メッセージ等）は、すべて個別Previewで確認できるようにする
+- Previewで表示できないUIは実装しない。画面レビュー時にUI要素が隠れない構成を必須とする
 - 画面状態は `sealed interface/class` か `data class` で明示する
 - 文字列/色/寸法はリソースまたはテーマで管理する
 - 例外処理は握りつぶさず、ユーザー向けメッセージとログを分離する

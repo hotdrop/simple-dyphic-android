@@ -548,22 +548,63 @@ private fun ConditionSelector(
 
 @Preview(heightDp = 1200, showBackground = true)
 @Composable
-private fun RecordEditScreenPreview() {
+private fun RecordEditScreenDefaultPreview() {
+    RecordEditScreenPreviewContent(
+        uiState = previewBaseUiState()
+    )
+}
+
+@Preview(heightDp = 1200, showBackground = true)
+@Composable
+private fun RecordEditScreenSavingPreview() {
+    RecordEditScreenPreviewContent(
+        uiState = previewBaseUiState().copy(isSaving = true)
+    )
+}
+
+@Preview(heightDp = 1200, showBackground = true)
+@Composable
+private fun RecordEditScreenErrorPreview() {
+    RecordEditScreenPreviewContent(
+        uiState = previewBaseUiState().copy(
+            errorMessageResId = R.string.record_error_save_failed
+        )
+    )
+}
+
+@Preview(heightDp = 1200, showBackground = true)
+@Composable
+private fun RecordEditScreenDiscardDialogPreview() {
+    RecordEditScreenPreviewContent(
+        uiState = previewBaseUiState().copy(showDiscardDialog = true)
+    )
+}
+
+@Preview(heightDp = 1200, showBackground = true)
+@Composable
+private fun RecordEditScreenHealthMessagePreview() {
+    RecordEditScreenPreviewContent(
+        uiState = previewBaseUiState().copy(
+            healthConnectMessageResId = R.string.record_health_message_import_failed
+        )
+    )
+}
+
+@Preview(heightDp = 1200, showBackground = true)
+@Composable
+private fun RecordEditScreenHealthSyncingPreview() {
+    RecordEditScreenPreviewContent(
+        uiState = previewBaseUiState().copy(isHealthSyncing = true)
+    )
+}
+
+@Composable
+private fun RecordEditScreenPreviewContent(
+    uiState: RecordEditUiState
+) {
     SimpleDyphicTheme {
         RecordEditScreen(
-            uiState = RecordEditUiState(
-                breakfast = "Toast",
-                lunch = "Pasta",
-                dinner = "Soup",
-                conditionType = ConditionType.NORMAL,
-                conditionMemo = "今日は体調が良いです。",
-                isToilet = true,
-                stepCount = 8632,
-                healthKcal = 392.4,
-                ringfitKcalInput = "120",
-                ringfitKmInput = "2.5",
-                hasChanges = true
-            ),
+            uiState = uiState,
             onBackRequest = {},
             onConfirmDiscard = {},
             onDismissDiscardDialog = {},
@@ -580,6 +621,22 @@ private fun RecordEditScreenPreview() {
             onDismissHealthMessage = {}
         )
     }
+}
+
+private fun previewBaseUiState(): RecordEditUiState {
+    return RecordEditUiState(
+        breakfast = "Toast",
+        lunch = "Pasta",
+        dinner = "Soup",
+        conditionType = ConditionType.NORMAL,
+        conditionMemo = "今日は体調が良いです。",
+        isToilet = true,
+        stepCount = 8632,
+        healthKcal = 392.4,
+        ringfitKcalInput = "120",
+        ringfitKmInput = "2.5",
+        hasChanges = true
+    )
 }
 
 private fun launchHealthConnectApp(context: Context): Boolean {

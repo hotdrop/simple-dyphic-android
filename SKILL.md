@@ -40,6 +40,8 @@ description: Flutter アプリ (`flutter_app/`) を Android 専用の Jetpack Co
 - 仕様差分がある場合は必ず TODO ではなく課題として記録する
 - 重大導線（起動、一覧、詳細、保存、設定）はUIテスト対象に含める
 - クラッシュ要因（null、非同期キャンセル、再コンポーズ副作用）を先に潰す
+- 画面内の条件分岐UI（エラー表示、確認ダイアログ、ローディング、補助メッセージなど）は必ずPreviewで個別に可視化する
+- Previewで確認できないUIは実装しない。画面設計レビュー時に全UI状態を漏れなく提示する
 
 ## Definition of Done
 - 主要画面が Compose 側で動作し、旧Flutter挙動と同等
