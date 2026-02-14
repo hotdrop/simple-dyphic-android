@@ -2,13 +2,16 @@ package jp.hotdrop.simpledyphic.ui.settings
 
 import android.content.Context
 import android.content.pm.PackageManager
-import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.data.repository.AccountRepository
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
+import jp.hotdrop.simpledyphic.model.AppCompletable
+import jp.hotdrop.simpledyphic.model.AppResult
+import jp.hotdrop.simpledyphic.model.UserAccount
+import jp.hotdrop.simpledyphic.ui.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,15 +23,13 @@ class SettingsViewModel @Inject constructor(
     @param:ApplicationContext private val appContext: Context,
     private val accountRepository: AccountRepository,
     private val recordRepository: RecordRepository
-) : ViewModel() {
+) : BaseViewModel() {
 
-    private val _uiState = MutableStateFlow(
-        SettingsUiState(appVersion = resolveAppVersion())
-    )
+    private val _uiState = MutableStateFlow(SettingsUiState(appVersion = resolveAppVersion()))
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {
-        syncCurrentAccount()
+        refreshCurrentAccount()
     }
 
     fun onRetry() {
@@ -53,60 +54,8 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(operationMessageResId = null) }
     }
 
-    suspend fun onSignInClick() {
-        executeOperation(
-            actionName = "Sign-in",
-            successMessageResId = R.string.settings_operation_sign_in_success
-        ) {
-            accountRepository.signInWithGoogle()
-            syncCurrentAccount()
-        }
-    }
-
-    suspend fun onSignOutClick() {
-        executeOperation(
-            actionName = "Sign-out",
-            successMessageResId = R.string.settings_operation_sign_out_success
-        ) {
-            accountRepository.signOut()
-            syncCurrentAccount()
-        }
-    }
-
-    suspend fun onBackupClick() {
-        executeOperation(
-            actionName = "Backup",
-            successMessageResId = R.string.settings_operation_backup_success
-        ) {
-            recordRepository.backup()
-        }
-    }
-
-    suspend fun onRestoreClick() {
-        executeOperation(
-            actionName = "Restore",
-            successMessageResId = R.string.settings_operation_restore_success
-        ) {
-            recordRepository.restore()
-        }
-    }
-
-    private fun syncCurrentAccount() {
-        val account = accountRepository.currentAccount()
-        _uiState.update {
-            it.copy(
-                isSignedIn = account != null,
-                accountName = account?.name,
-                accountEmail = account?.email
-            )
-        }
-    }
-
-    private suspend fun executeOperation(
-        actionName: String,
-        successMessageResId: Int,
-        action: suspend () -> Unit
-    ) {
+    fun onSignInClick() {
+        if (_uiState.value.isLoading) return
         _uiState.update {
             it.copy(
                 isLoading = true,
@@ -114,38 +63,183 @@ class SettingsViewModel @Inject constructor(
                 operationMessageResId = null
             )
         }
-        runCatching {
-            action()
-        }.onSuccess {
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    errorMessageResId = null,
-                    operationMessageResId = successMessageResId
-                )
+        launch {
+            when (val result = dispatcherIO { accountRepository.signInWithGoogle() }) {
+                is AppResult.Success -> {
+                    applyAccount(result.value)
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            operationMessageResId = R.string.settings_operation_sign_in_success
+                        )
+                    }
+                }
+                is AppResult.Failure -> {
+                    Timber.e(result.error, "Sign-in failed")
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            operationMessageResId = R.string.settings_operation_failed
+                        )
+                    }
+                }
             }
-        }.onFailure { error ->
-            Timber.e(error, "$actionName failed")
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    errorMessageResId = null,
-                    operationMessageResId = R.string.settings_operation_failed
-                )
+        }
+    }
+
+    fun onSignOutClick() {
+        if (_uiState.value.isLoading) return
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                errorMessageResId = null,
+                operationMessageResId = null
+            )
+        }
+        launch {
+            when (val result = dispatcherIO { accountRepository.signOut() }) {
+                AppCompletable.Complete -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isSignedIn = false,
+                            accountName = null,
+                            accountEmail = null,
+                            operationMessageResId = R.string.settings_operation_sign_out_success
+                        )
+                    }
+                }
+                is AppCompletable.Failure -> {
+                    Timber.e(result.error, "Sign-out failed")
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            operationMessageResId = R.string.settings_operation_failed
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun onBackupClick() {
+        if (_uiState.value.isLoading) return
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                errorMessageResId = null,
+                operationMessageResId = null
+            )
+        }
+        launch {
+            when (val result = dispatcherIO { recordRepository.backup() }) {
+                AppCompletable.Complete -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            operationMessageResId = R.string.settings_operation_backup_success
+                        )
+                    }
+                }
+                is AppCompletable.Failure -> {
+                    Timber.e(result.error, "Backup failed")
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            operationMessageResId = R.string.settings_operation_failed
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun onRestoreClick() {
+        if (_uiState.value.isLoading) return
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                errorMessageResId = null,
+                operationMessageResId = null
+            )
+        }
+        launch {
+            when (val result = dispatcherIO { recordRepository.restore() }) {
+                AppCompletable.Complete -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            operationMessageResId = R.string.settings_operation_restore_success
+                        )
+                    }
+                }
+                is AppCompletable.Failure -> {
+                    Timber.e(result.error, "Restore failed")
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            operationMessageResId = R.string.settings_operation_failed
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun refreshCurrentAccount() {
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                errorMessageResId = null,
+                operationMessageResId = null
+            )
+        }
+        launch {
+            when (val result = dispatcherIO { accountRepository.currentAccount() }) {
+                is AppResult.Success -> {
+                    val account = result.value
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isSignedIn = account != null,
+                            accountName = account?.name,
+                            accountEmail = account?.email
+                        )
+                    }
+                }
+                is AppResult.Failure -> {
+                    Timber.e(result.error, "Failed to resolve current account")
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            operationMessageResId = R.string.settings_operation_failed
+                        )
+                    }
+                }
             }
         }
     }
 
     private fun resolveAppVersion(): String {
-        return runCatching {
+        return try {
             val packageInfo = appContext.packageManager.getPackageInfo(
                 appContext.packageName,
                 PackageManager.PackageInfoFlags.of(0)
             )
             "${packageInfo.versionName ?: appContext.getString(R.string.common_unknown)} (${packageInfo.longVersionCode})"
-        }.getOrElse {
-            Timber.e(it, "Failed to resolve app version")
+        } catch (error: Throwable) {
+            Timber.e(error, "Failed to resolve app version")
             appContext.getString(R.string.common_unknown)
+        }
+    }
+
+    private fun applyAccount(account: UserAccount) {
+        _uiState.update {
+            it.copy(
+                isSignedIn = true,
+                accountName = account.name,
+                accountEmail = account.email
+            )
         }
     }
 }

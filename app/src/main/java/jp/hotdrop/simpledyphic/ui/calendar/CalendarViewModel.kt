@@ -1,15 +1,14 @@
 package jp.hotdrop.simpledyphic.ui.calendar
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
 import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
+import jp.hotdrop.simpledyphic.model.AppResult
 import jp.hotdrop.simpledyphic.model.DyphicId
-import kotlinx.coroutines.launch
+import jp.hotdrop.simpledyphic.ui.BaseViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +18,7 @@ import timber.log.Timber
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val recordRepository: RecordRepository
-) : ViewModel() {
+) : BaseViewModel() {
 
     private val _uiState = MutableStateFlow(CalendarUiState())
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
@@ -53,30 +52,32 @@ class CalendarViewModel @Inject constructor(
     fun selectedDayId(): Int = DyphicId.dateToId(_uiState.value.selectedDate)
 
     private fun reloadRecords(showLoading: Boolean) {
-        viewModelScope.launch {
+        launch {
             if (showLoading) {
                 _uiState.update { it.copy(isLoading = true, errorMessageResId = null) }
             } else {
                 _uiState.update { it.copy(errorMessageResId = null) }
             }
-            runCatching {
-                recordRepository.findAll()
-            }.onSuccess { records ->
-                val recordsByDate = records.associateBy { record -> record.date }
-                _uiState.update { state ->
-                    state.copy(
-                        isLoading = false,
-                        errorMessageResId = null,
-                        recordsByDate = recordsByDate
-                    )
+
+            when (val result = dispatcherIO { recordRepository.findAll() }) {
+                is AppResult.Success -> {
+                    val recordsByDate = result.value.associateBy { record -> record.date }
+                    _uiState.update { state ->
+                        state.copy(
+                            isLoading = false,
+                            errorMessageResId = null,
+                            recordsByDate = recordsByDate
+                        )
+                    }
                 }
-            }.onFailure { error ->
-                Timber.e(error, "Failed to load records")
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessageResId = R.string.calendar_error_load_records
-                    )
+                is AppResult.Failure -> {
+                    Timber.e(result.error, "Failed to load records")
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessageResId = R.string.calendar_error_load_records
+                        )
+                    }
                 }
             }
         }

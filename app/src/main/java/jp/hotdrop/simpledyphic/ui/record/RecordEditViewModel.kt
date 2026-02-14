@@ -1,18 +1,19 @@
 package jp.hotdrop.simpledyphic.ui.record
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.data.repository.HealthConnectRepository
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
+import jp.hotdrop.simpledyphic.model.AppCompletable
+import jp.hotdrop.simpledyphic.model.AppResult
 import jp.hotdrop.simpledyphic.model.ConditionType
 import jp.hotdrop.simpledyphic.model.DailyHealthSummary
 import jp.hotdrop.simpledyphic.model.DyphicId
 import jp.hotdrop.simpledyphic.model.HealthConnectStatus
 import jp.hotdrop.simpledyphic.model.Record
+import jp.hotdrop.simpledyphic.ui.BaseViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @HiltViewModel
@@ -29,7 +29,7 @@ class RecordEditViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val recordRepository: RecordRepository,
     private val healthConnectRepository: HealthConnectRepository
-) : ViewModel() {
+) : BaseViewModel() {
 
     private val recordId: Int = parseRecordId(savedStateHandle)
     private var baseRecord: Record = Record.createEmpty(DyphicId.idToDate(recordId))
@@ -100,14 +100,14 @@ class RecordEditViewModel @Inject constructor(
             return
         }
         hasRequestedInitialHealthSync = true
-        viewModelScope.launch {
+        launch {
             loadRecordJob.join()
             onHealthSyncRequested()
         }
     }
 
     fun onHealthSyncRequested() {
-        viewModelScope.launch {
+        launch {
             _uiState.update {
                 it.copy(
                     isHealthSyncing = true,
@@ -118,15 +118,28 @@ class RecordEditViewModel @Inject constructor(
 
             when (healthConnectRepository.getStatus()) {
                 HealthConnectStatus.AVAILABLE -> {
-                    if (healthConnectRepository.hasRequiredPermissions()) {
-                        importHealthSummary()
-                    } else {
-                        _uiState.update { it.copy(isHealthSyncing = false) }
-                        _effects.emit(
-                            RecordEditEffect.RequestHealthPermissions(
-                                permissions = healthConnectRepository.requiredPermissions()
-                            )
-                        )
+                    when (val permissionResult = dispatcherIO { healthConnectRepository.hasRequiredPermissions() }) {
+                        is AppResult.Success -> {
+                            if (permissionResult.value) {
+                                importHealthSummary()
+                            } else {
+                                _uiState.update { it.copy(isHealthSyncing = false) }
+                                _effects.emit(
+                                    RecordEditEffect.RequestHealthPermissions(
+                                        permissions = healthConnectRepository.requiredPermissions()
+                                    )
+                                )
+                            }
+                        }
+                        is AppResult.Failure -> {
+                            Timber.e(permissionResult.error, "Failed to check Health Connect permissions")
+                            _uiState.update {
+                                it.copy(
+                                    isHealthSyncing = false,
+                                    healthConnectMessageResId = R.string.record_health_message_import_failed
+                                )
+                            }
+                        }
                     }
                 }
                 HealthConnectStatus.NOT_INSTALLED -> {
@@ -161,7 +174,7 @@ class RecordEditViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch {
+        launch {
             _uiState.update { it.copy(isHealthSyncing = true, healthConnectMessageResId = null) }
             importHealthSummary()
         }
@@ -178,7 +191,7 @@ class RecordEditViewModel @Inject constructor(
     }
 
     fun save(onComplete: (Boolean) -> Unit) {
-        viewModelScope.launch {
+        launch {
             val kcalInput = parseNumberInput(_uiState.value.ringfitKcalInput)
             if (kcalInput is ParsedNumber.Invalid) {
                 _uiState.update {
@@ -215,36 +228,38 @@ class RecordEditViewModel @Inject constructor(
                 return@launch
             }
 
-            runCatching {
-                recordRepository.save(target)
-            }.onSuccess {
-                baseRecord = target
-                _uiState.update { it.copy(isSaving = false, errorMessageResId = null, hasChanges = false) }
-                onComplete(true)
-            }.onFailure { error ->
-                Timber.e(error, "Failed to save record")
-                _uiState.update {
-                    it.copy(
-                        isSaving = false,
-                        errorMessageResId = R.string.record_error_save_failed
-                    )
+            when (val saveResult = dispatcherIO { recordRepository.save(target) }) {
+                AppCompletable.Complete -> {
+                    baseRecord = target
+                    _uiState.update { it.copy(isSaving = false, errorMessageResId = null, hasChanges = false) }
+                    onComplete(true)
+                }
+                is AppCompletable.Failure -> {
+                    Timber.e(saveResult.error, "Failed to save record")
+                    _uiState.update {
+                        it.copy(
+                            isSaving = false,
+                            errorMessageResId = R.string.record_error_save_failed
+                        )
+                    }
                 }
             }
         }
     }
 
     private suspend fun importHealthSummary() {
-        runCatching {
+        when (val summaryResult = dispatcherIO {
             healthConnectRepository.readDailySummary(_uiState.value.recordDate)
-        }.onSuccess { summary ->
-            applyHealthSummary(summary)
-        }.onFailure { error ->
-            Timber.e(error, "Failed to import Health Connect data")
-            _uiState.update {
-                it.copy(
-                    isHealthSyncing = false,
-                    healthConnectMessageResId = R.string.record_health_message_import_failed
-                )
+        }) {
+            is AppResult.Success -> applyHealthSummary(summaryResult.value)
+            is AppResult.Failure -> {
+                Timber.e(summaryResult.error, "Failed to import Health Connect data")
+                _uiState.update {
+                    it.copy(
+                        isHealthSyncing = false,
+                        healthConnectMessageResId = R.string.record_health_message_import_failed
+                    )
+                }
             }
         }
     }
@@ -262,50 +277,52 @@ class RecordEditViewModel @Inject constructor(
     }
 
     private fun loadRecord(): Job {
-        return viewModelScope.launch {
-            runCatching {
-                recordRepository.find(recordId)
-            }.onSuccess { record ->
-                baseRecord = record
-                _uiState.update {
-                    it.copy(
-                        recordDate = record.date,
-                        breakfast = record.breakfast.orEmpty(),
-                        lunch = record.lunch.orEmpty(),
-                        dinner = record.dinner.orEmpty(),
-                        conditionType = record.condition,
-                        conditionMemo = record.conditionMemo.orEmpty(),
-                        isToilet = record.isToilet,
-                        stepCount = record.stepCount,
-                        healthKcal = record.healthKcal,
-                        ringfitKcalInput = record.ringfitKcal?.toString().orEmpty(),
-                        ringfitKmInput = record.ringfitKm?.toString().orEmpty(),
-                        hasChanges = false
-                    )
-                }
-            }.onFailure { error ->
-                if (error is NoSuchElementException) {
-                    baseRecord = Record.createEmpty(DyphicId.idToDate(recordId))
+        return launch {
+            when (val recordResult = dispatcherIO { recordRepository.find(recordId) }) {
+                is AppResult.Success -> {
+                    val record = recordResult.value
+                    baseRecord = record
                     _uiState.update {
                         it.copy(
-                            recordDate = baseRecord.date,
-                            breakfast = "",
-                            lunch = "",
-                            dinner = "",
-                            conditionType = null,
-                            conditionMemo = "",
-                            isToilet = false,
-                            stepCount = null,
-                            healthKcal = null,
-                            ringfitKcalInput = "",
-                            ringfitKmInput = "",
+                            recordDate = record.date,
+                            breakfast = record.breakfast.orEmpty(),
+                            lunch = record.lunch.orEmpty(),
+                            dinner = record.dinner.orEmpty(),
+                            conditionType = record.condition,
+                            conditionMemo = record.conditionMemo.orEmpty(),
+                            isToilet = record.isToilet,
+                            stepCount = record.stepCount,
+                            healthKcal = record.healthKcal,
+                            ringfitKcalInput = record.ringfitKcal?.toString().orEmpty(),
+                            ringfitKmInput = record.ringfitKm?.toString().orEmpty(),
                             hasChanges = false
                         )
                     }
-                } else {
-                    Timber.e(error, "Failed to load record")
-                    _uiState.update {
-                        it.copy(errorMessageResId = R.string.record_error_load_failed)
+                }
+                is AppResult.Failure -> {
+                    if (recordResult.error is NoSuchElementException) {
+                        baseRecord = Record.createEmpty(DyphicId.idToDate(recordId))
+                        _uiState.update {
+                            it.copy(
+                                recordDate = baseRecord.date,
+                                breakfast = "",
+                                lunch = "",
+                                dinner = "",
+                                conditionType = null,
+                                conditionMemo = "",
+                                isToilet = false,
+                                stepCount = null,
+                                healthKcal = null,
+                                ringfitKcalInput = "",
+                                ringfitKmInput = "",
+                                hasChanges = false
+                            )
+                        }
+                    } else {
+                        Timber.e(recordResult.error, "Failed to load record")
+                        _uiState.update {
+                            it.copy(errorMessageResId = R.string.record_error_load_failed)
+                        }
                     }
                 }
             }

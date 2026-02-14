@@ -1,4 +1,4 @@
-package jp.hotdrop.simpledyphic
+package jp.hotdrop.simpledyphic.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

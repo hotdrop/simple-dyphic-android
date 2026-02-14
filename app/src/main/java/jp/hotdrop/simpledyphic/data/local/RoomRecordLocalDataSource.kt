@@ -23,9 +23,6 @@ class RoomRecordLocalDataSource @Inject constructor(
     }
 
     suspend fun replaceAll(records: List<Record>) {
-        recordDao.deleteAll()
-        if (records.isNotEmpty()) {
-            recordDao.upsertAll(records.map { it.toEntity() })
-        }
+        recordDao.replaceAll(records.map { it.toEntity() })
     }
 }

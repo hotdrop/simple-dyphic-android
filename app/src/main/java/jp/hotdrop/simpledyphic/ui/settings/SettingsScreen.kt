@@ -29,7 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -40,13 +39,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.ui.components.ErrorContent
 import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
-import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     SettingsScreen(
         uiState = uiState,
@@ -54,10 +51,10 @@ fun SettingsRoute(
         onLicenseClick = viewModel::onLicenseClick,
         onLicenseDismiss = viewModel::onLicenseDismiss,
         onOperationMessageDismiss = viewModel::onOperationMessageDismiss,
-        onSignInClick = { scope.launch { viewModel.onSignInClick() } },
-        onSignOutClick = { scope.launch { viewModel.onSignOutClick() } },
-        onBackupClick = { scope.launch { viewModel.onBackupClick() } },
-        onRestoreClick = { scope.launch { viewModel.onRestoreClick() } }
+        onSignInClick = viewModel::onSignInClick,
+        onSignOutClick = viewModel::onSignOutClick,
+        onBackupClick = viewModel::onBackupClick,
+        onRestoreClick = viewModel::onRestoreClick
     )
 }
 
@@ -209,7 +206,10 @@ private fun SettingsContent(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(onClick = onLicenseClick)
+                        .clickable(
+                            enabled = !uiState.isLoading,
+                            onClick = onLicenseClick
+                        )
                 )
                 HorizontalDivider()
             }
@@ -228,7 +228,10 @@ private fun SettingsContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("settings_backup_item")
-                            .clickable(onClick = onBackupClick)
+                            .clickable(
+                                enabled = !uiState.isLoading,
+                                onClick = onBackupClick
+                            )
                     )
                     HorizontalDivider()
                 }
@@ -245,7 +248,10 @@ private fun SettingsContent(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(onClick = onRestoreClick)
+                            .clickable(
+                                enabled = !uiState.isLoading,
+                                onClick = onRestoreClick
+                            )
                     )
                     HorizontalDivider()
                 }
@@ -253,6 +259,7 @@ private fun SettingsContent(
                 item {
                     OutlinedButton(
                         onClick = onSignOutClick,
+                        enabled = !uiState.isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 24.dp)
@@ -265,6 +272,7 @@ private fun SettingsContent(
                     Spacer(modifier = Modifier.height(48.dp))
                     Button(
                         onClick = onSignInClick,
+                        enabled = !uiState.isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)

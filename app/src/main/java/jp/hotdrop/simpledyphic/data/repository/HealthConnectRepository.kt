@@ -8,8 +8,10 @@ import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import dagger.hilt.android.qualifiers.ApplicationContext
+import jp.hotdrop.simpledyphic.model.AppResult
 import jp.hotdrop.simpledyphic.model.DailyHealthSummary
 import jp.hotdrop.simpledyphic.model.HealthConnectStatus
+import jp.hotdrop.simpledyphic.model.appResultSuspend
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
@@ -30,42 +32,46 @@ class HealthConnectRepository @Inject constructor(
         }
     }
 
-    suspend fun hasRequiredPermissions(): Boolean {
-        val client = healthConnectClientOrNull() ?: return false
-        val grantedPermissions = client.permissionController.getGrantedPermissions()
-        return grantedPermissions.containsAll(REQUIRED_PERMISSIONS)
+    suspend fun hasRequiredPermissions(): AppResult<Boolean> {
+        return appResultSuspend {
+            val client = healthConnectClientOrNull() ?: return@appResultSuspend false
+            val grantedPermissions = client.permissionController.getGrantedPermissions()
+            grantedPermissions.containsAll(REQUIRED_PERMISSIONS)
+        }
     }
 
-    suspend fun readDailySummary(date: LocalDate): DailyHealthSummary {
-        val client = healthConnectClientOrNull() ?: throw IllegalStateException("Health Connect is not available.")
-        val grantedPermissions = client.permissionController.getGrantedPermissions()
-        if (!grantedPermissions.containsAll(REQUIRED_PERMISSIONS)) {
-            throw SecurityException("Health Connect permissions are missing.")
+    suspend fun readDailySummary(date: LocalDate): AppResult<DailyHealthSummary> {
+        return appResultSuspend {
+            val client = healthConnectClientOrNull() ?: throw IllegalStateException("Health Connect is not available.")
+            val grantedPermissions = client.permissionController.getGrantedPermissions()
+            if (!grantedPermissions.containsAll(REQUIRED_PERMISSIONS)) {
+                throw SecurityException("Health Connect permissions are missing.")
+            }
+
+            val zoneId = ZoneId.systemDefault()
+            val start = date.atStartOfDay(zoneId).toInstant()
+            val end = date.plusDays(1).atStartOfDay(zoneId).toInstant()
+            val timeRange = TimeRangeFilter.between(start, end)
+
+            val steps = client.readRecords(
+                ReadRecordsRequest(
+                    recordType = StepsRecord::class,
+                    timeRangeFilter = timeRange
+                )
+            ).records.sumOf { it.count }
+
+            val burnedKcal = client.readRecords(
+                androidx.health.connect.client.request.ReadRecordsRequest(
+                    recordType = TotalCaloriesBurnedRecord::class,
+                    timeRangeFilter = timeRange
+                )
+            ).records.sumOf { it.energy.inKilocalories }
+
+            DailyHealthSummary(
+                stepCount = steps.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
+                burnedKcal = burnedKcal
+            )
         }
-
-        val zoneId = ZoneId.systemDefault()
-        val start = date.atStartOfDay(zoneId).toInstant()
-        val end = date.plusDays(1).atStartOfDay(zoneId).toInstant()
-        val timeRange = TimeRangeFilter.between(start, end)
-
-        val steps = client.readRecords(
-            ReadRecordsRequest(
-                recordType = StepsRecord::class,
-                timeRangeFilter = timeRange
-            )
-        ).records.sumOf { it.count }
-
-        val burnedKcal = client.readRecords(
-            androidx.health.connect.client.request.ReadRecordsRequest(
-                recordType = TotalCaloriesBurnedRecord::class,
-                timeRangeFilter = timeRange
-            )
-        ).records.sumOf { it.energy.inKilocalories }
-
-        return DailyHealthSummary(
-            stepCount = steps.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
-            burnedKcal = burnedKcal
-        )
     }
 
     private fun healthConnectClientOrNull(): HealthConnectClient? {

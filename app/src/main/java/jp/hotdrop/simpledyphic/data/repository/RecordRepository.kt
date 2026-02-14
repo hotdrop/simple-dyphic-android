@@ -2,7 +2,11 @@ package jp.hotdrop.simpledyphic.data.repository
 
 import jp.hotdrop.simpledyphic.data.local.RoomRecordLocalDataSource
 import jp.hotdrop.simpledyphic.data.remote.FirestoreRecordRemoteDataSource
+import jp.hotdrop.simpledyphic.model.AppCompletable
+import jp.hotdrop.simpledyphic.model.AppResult
 import jp.hotdrop.simpledyphic.model.Record
+import jp.hotdrop.simpledyphic.model.appCompletableSuspend
+import jp.hotdrop.simpledyphic.model.appResultSuspend
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,30 +17,56 @@ class RecordRepository @Inject constructor(
     private val remoteDataSource: FirestoreRecordRemoteDataSource,
     private val accountRepository: AccountRepository
 ) {
-    suspend fun find(id: Int): Record = localDataSource.find(id)
-
-    suspend fun findAll(): List<Record> = localDataSource.findAll()
-
-    suspend fun save(record: Record) {
-        localDataSource.save(record)
+    suspend fun find(id: Int): AppResult<Record> {
+        return appResultSuspend {
+            localDataSource.find(id)
+        }
     }
 
-    suspend fun backup() {
-        val userId = accountRepository.currentAccount()?.uid
-        if (userId == null) {
-            Timber.i("Skip backup because user is not signed in")
-            return
+    suspend fun findAll(): AppResult<List<Record>> {
+        return appResultSuspend {
+            localDataSource.findAll()
         }
-        remoteDataSource.saveAll(userId = userId, records = localDataSource.findAll())
     }
 
-    suspend fun restore() {
-        val userId = accountRepository.currentAccount()?.uid
-        if (userId == null) {
-            Timber.i("Skip restore because user is not signed in")
-            return
+    suspend fun save(record: Record): AppCompletable {
+        return appCompletableSuspend {
+            localDataSource.save(record)
         }
-        val remoteRecords = remoteDataSource.findAll(userId = userId)
-        localDataSource.replaceAll(remoteRecords)
+    }
+
+    suspend fun backup(): AppCompletable {
+        return when (val account = accountRepository.currentAccount()) {
+            is AppResult.Failure -> AppCompletable.Failure(account.error)
+            is AppResult.Success -> {
+                val userId = account.value?.uid
+                if (userId == null) {
+                    Timber.i("Skip backup because user is not signed in")
+                    AppCompletable.Complete
+                } else {
+                    appCompletableSuspend {
+                        remoteDataSource.saveAll(userId = userId, records = localDataSource.findAll())
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun restore(): AppCompletable {
+        return when (val account = accountRepository.currentAccount()) {
+            is AppResult.Failure -> AppCompletable.Failure(account.error)
+            is AppResult.Success -> {
+                val userId = account.value?.uid
+                if (userId == null) {
+                    Timber.i("Skip restore because user is not signed in")
+                    AppCompletable.Complete
+                } else {
+                    appCompletableSuspend {
+                        val remoteRecords = remoteDataSource.findAll(userId = userId)
+                        localDataSource.replaceAll(remoteRecords)
+                    }
+                }
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-package jp.hotdrop.simpledyphic
+package jp.hotdrop.simpledyphic.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -22,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import jp.hotdrop.simpledyphic.R
 import jp.hotdrop.simpledyphic.ui.calendar.CalendarRoute
 import jp.hotdrop.simpledyphic.ui.record.RecordEditRoute
 import jp.hotdrop.simpledyphic.ui.record.RecordEditViewModel
