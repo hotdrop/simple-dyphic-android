@@ -12,16 +12,6 @@ sealed interface AppCompletable {
     data class Failure(val error: Throwable) : AppCompletable
 }
 
-inline fun <T, R> AppResult<T>.map(transform: (T) -> R): AppResult<R> = when (this) {
-    is AppResult.Success -> AppResult.Success(transform(value))
-    is AppResult.Failure -> this
-}
-
-inline fun <T, R> AppResult<T>.flatMap(transform: (T) -> AppResult<R>): AppResult<R> = when (this) {
-    is AppResult.Success -> transform(value)
-    is AppResult.Failure -> this
-}
-
 suspend inline fun <T> appResultSuspend(crossinline block: suspend () -> T): AppResult<T> {
     return try {
         AppResult.Success(block())

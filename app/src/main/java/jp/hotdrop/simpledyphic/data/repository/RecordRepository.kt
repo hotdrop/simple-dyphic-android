@@ -26,12 +26,6 @@ class RecordRepository @Inject constructor(
         }
     }
 
-    suspend fun findAll(): AppResult<List<Record>> {
-        return appResultSuspend {
-            localDataSource.findAll()
-        }
-    }
-
     fun observeAll(): Flow<AppResult<List<Record>>> {
         return localDataSource.observeAll()
             .map { records -> AppResult.Success(records) as AppResult<List<Record>> }

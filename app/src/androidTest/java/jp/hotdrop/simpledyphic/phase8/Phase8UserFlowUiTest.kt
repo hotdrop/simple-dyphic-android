@@ -30,7 +30,7 @@ class Phase8UserFlowUiTest {
     @Test
     fun calendarToRecordSaveFlow_canNavigateAndSave() {
         val selectedDate = LocalDate.of(2026, 2, 7)
-        var showRecord by mutableStateOf(false)
+        val (showRecord, setShowRecord) = mutableStateOf(false)
         var breakfast by mutableStateOf("")
         var isSaved = false
 
@@ -55,7 +55,7 @@ class Phase8UserFlowUiTest {
                         onRingfitKmChanged = {},
                         onSave = {
                             isSaved = true
-                            showRecord = false
+                            setShowRecord(false)
                         },
                         onHealthSyncRequest = {},
                         onDismissHealthMessage = {}
@@ -72,7 +72,7 @@ class Phase8UserFlowUiTest {
                         onRetry = {},
                         onMonthChanged = {},
                         onDateTap = {},
-                        onEditSelectedDate = { showRecord = true }
+                        onEditSelectedDate = { setShowRecord(true) }
                     )
                 }
             }
