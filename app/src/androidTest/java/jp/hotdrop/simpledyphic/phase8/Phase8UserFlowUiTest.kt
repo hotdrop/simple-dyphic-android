@@ -58,8 +58,6 @@ class Phase8UserFlowUiTest {
                             showRecord = false
                         },
                         onHealthSyncRequest = {},
-                        onConfirmHealthOverwrite = {},
-                        onDismissHealthOverwriteDialog = {},
                         onDismissHealthMessage = {}
                     )
                 } else {

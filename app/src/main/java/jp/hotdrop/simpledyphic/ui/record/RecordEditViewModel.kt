@@ -33,7 +33,6 @@ class RecordEditViewModel @Inject constructor(
 
     private val recordId: Int = parseRecordId(savedStateHandle)
     private var baseRecord: Record = Record.createEmpty(DyphicId.idToDate(recordId))
-    private var pendingHealthSummary: DailyHealthSummary? = null
     private var hasRequestedInitialHealthSync: Boolean = false
 
     private val _uiState = MutableStateFlow(
@@ -168,22 +167,6 @@ class RecordEditViewModel @Inject constructor(
         }
     }
 
-    fun confirmHealthOverwrite() {
-        val summary = pendingHealthSummary ?: return
-        applyHealthSummary(summary)
-        pendingHealthSummary = null
-    }
-
-    fun dismissHealthOverwriteDialog() {
-        pendingHealthSummary = null
-        _uiState.update {
-            it.copy(
-                showHealthOverwriteDialog = false,
-                healthConnectMessageResId = R.string.record_health_message_overwrite_cancelled
-            )
-        }
-    }
-
     fun dismissHealthConnectMessage() {
         _uiState.update { it.copy(healthConnectMessageResId = null) }
     }
@@ -254,18 +237,7 @@ class RecordEditViewModel @Inject constructor(
         runCatching {
             healthConnectRepository.readDailySummary(_uiState.value.recordDate)
         }.onSuccess { summary ->
-            val shouldAskOverwrite = shouldAskOverwrite(summary)
-            if (shouldAskOverwrite) {
-                pendingHealthSummary = summary
-                _uiState.update {
-                    it.copy(
-                        isHealthSyncing = false,
-                        showHealthOverwriteDialog = true
-                    )
-                }
-            } else {
-                applyHealthSummary(summary)
-            }
+            applyHealthSummary(summary)
         }.onFailure { error ->
             Timber.e(error, "Failed to import Health Connect data")
             _uiState.update {
@@ -277,20 +249,12 @@ class RecordEditViewModel @Inject constructor(
         }
     }
 
-    private fun shouldAskOverwrite(summary: DailyHealthSummary): Boolean {
-        val current = _uiState.value
-        val hasStepConflict = current.stepCount != null && current.stepCount != summary.stepCount
-        val hasKcalConflict = current.healthKcal != null && current.healthKcal != summary.burnedKcal
-        return hasStepConflict || hasKcalConflict
-    }
-
     private fun applyHealthSummary(summary: DailyHealthSummary) {
         updateInput {
             it.copy(
                 stepCount = summary.stepCount,
                 healthKcal = summary.burnedKcal,
                 isHealthSyncing = false,
-                showHealthOverwriteDialog = false,
                 healthConnectMessageResId = null,
                 errorMessageResId = null
             )

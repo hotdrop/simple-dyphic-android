@@ -111,8 +111,6 @@ fun RecordEditRoute(
                 viewModel.onHealthConnectAppOpenFailed()
             }
         },
-        onConfirmHealthOverwrite = viewModel::confirmHealthOverwrite,
-        onDismissHealthOverwriteDialog = viewModel::dismissHealthOverwriteDialog,
         onDismissHealthMessage = viewModel::dismissHealthConnectMessage
     )
 }
@@ -134,8 +132,6 @@ fun RecordEditScreen(
     onRingfitKmChanged: (String) -> Unit,
     onSave: () -> Unit,
     onHealthSyncRequest: () -> Unit,
-    onConfirmHealthOverwrite: () -> Unit,
-    onDismissHealthOverwriteDialog: () -> Unit,
     onDismissHealthMessage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -298,23 +294,6 @@ fun RecordEditScreen(
         )
     }
 
-    if (uiState.showHealthOverwriteDialog) {
-        AlertDialog(
-            onDismissRequest = onDismissHealthOverwriteDialog,
-            title = { Text(text = stringResource(R.string.record_health_overwrite_title)) },
-            text = { Text(text = stringResource(R.string.record_health_overwrite_message)) },
-            confirmButton = {
-                Button(onClick = onConfirmHealthOverwrite) {
-                    Text(text = stringResource(R.string.record_health_overwrite_confirm))
-                }
-            },
-            dismissButton = {
-                Button(onClick = onDismissHealthOverwriteDialog) {
-                    Text(text = stringResource(R.string.record_health_overwrite_cancel))
-                }
-            }
-        )
-    }
 }
 
 @Composable
@@ -601,8 +580,6 @@ private fun RecordEditScreenPreview() {
             onRingfitKmChanged = {},
             onSave = {},
             onHealthSyncRequest = {},
-            onConfirmHealthOverwrite = {},
-            onDismissHealthOverwriteDialog = {},
             onDismissHealthMessage = {}
         )
     }

@@ -64,12 +64,7 @@
     <string name="record_health_message_update_required">Health Connect requires an update before use.</string>
     <string name="record_health_message_permission_denied">Health Connect permission was denied.</string>
     <string name="record_health_message_import_failed">Failed to import Health Connect data.</string>
-    <string name="record_health_message_overwrite_cancelled">Import cancelled. Existing values were kept.</string>
     <string name="record_health_message_app_open_failed">Failed to open the Health Connect app.</string>
-    <string name="record_health_overwrite_title">Overwrite health data?</string>
-    <string name="record_health_overwrite_message">Current step count or calories differ. Overwrite with Health Connect values?</string>
-    <string name="record_health_overwrite_confirm">Overwrite</string>
-    <string name="record_health_overwrite_cancel">Keep current values</string>
     <string name="record_error_ringfit_kcal_number">RingFit kcal must be a number.</string>
     <string name="record_error_ringfit_km_number">RingFit km must be a number.</string>
     <string name="record_error_save_failed">Failed to save record.</string>

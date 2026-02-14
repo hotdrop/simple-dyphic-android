@@ -18,7 +18,6 @@ data class RecordEditUiState(
     val ringfitKmInput: String = "",
     val hasChanges: Boolean = false,
     val showDiscardDialog: Boolean = false,
-    val showHealthOverwriteDialog: Boolean = false,
     val isSaving: Boolean = false,
     val isHealthSyncing: Boolean = false,
     @param:StringRes val healthConnectMessageResId: Int? = null,
