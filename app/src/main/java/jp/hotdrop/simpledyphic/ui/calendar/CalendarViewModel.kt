@@ -1,0 +1,83 @@
+package jp.hotdrop.simpledyphic.ui.calendar
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
+import java.time.YearMonth
+import javax.inject.Inject
+import jp.hotdrop.simpledyphic.data.repository.RecordRepository
+import jp.hotdrop.simpledyphic.model.DyphicId
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import timber.log.Timber
+
+@HiltViewModel
+class CalendarViewModel @Inject constructor(
+    private val recordRepository: RecordRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(CalendarUiState())
+    val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
+
+    init {
+        Timber.d("CalendarViewModel initialized")
+        reloadRecords(showLoading = true)
+    }
+
+    fun onRecordUpdated() {
+        reloadRecords(showLoading = false)
+    }
+
+    fun onRetry() {
+        reloadRecords(showLoading = true)
+    }
+
+    fun onVisibleMonthChanged(yearMonth: YearMonth) {
+        _uiState.update { it.copy(currentMonth = yearMonth) }
+    }
+
+    fun onDaySelected(date: LocalDate) {
+        _uiState.update {
+            it.copy(
+                selectedDate = date,
+                currentMonth = YearMonth.from(date)
+            )
+        }
+    }
+
+    fun selectedDayId(): Int = DyphicId.dateToId(_uiState.value.selectedDate)
+
+    private fun reloadRecords(showLoading: Boolean) {
+        viewModelScope.launch {
+            if (showLoading) {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            } else {
+                _uiState.update { it.copy(errorMessage = null) }
+            }
+            runCatching {
+                recordRepository.findAll()
+            }.onSuccess { records ->
+                val recordsByDate = records.associateBy { record -> record.date }
+                _uiState.update { state ->
+                    state.copy(
+                        isLoading = false,
+                        errorMessage = null,
+                        recordsByDate = recordsByDate
+                    )
+                }
+            }.onFailure { error ->
+                Timber.e(error, "Failed to load records")
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Failed to load records"
+                    )
+                }
+            }
+        }
+    }
+}

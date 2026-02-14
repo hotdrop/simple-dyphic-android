@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android)
+    implementation(libs.timber)
     ksp(libs.hilt.android.compiler)
     implementation(libs.kizitonwose.calendar)
     implementation(libs.androidx.room.ktx)

@@ -1,6 +1,6 @@
 package jp.hotdrop.simpledyphic.data.mapper
 
-import jp.hotdrop.simpledyphic.domain.model.ConditionType
+import jp.hotdrop.simpledyphic.model.ConditionType
 
 private const val CONDITION_BAD = "悪い"
 private const val CONDITION_NORMAL = "普通"

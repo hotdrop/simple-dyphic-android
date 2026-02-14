@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import jp.hotdrop.simpledyphic.data.mapper.toConditionType
 import jp.hotdrop.simpledyphic.data.mapper.toRawCondition
-import jp.hotdrop.simpledyphic.domain.model.Record
+import jp.hotdrop.simpledyphic.model.Record
 
 @Entity(tableName = "records")
 data class RecordEntity(
