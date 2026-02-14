@@ -12,10 +12,13 @@ import jp.hotdrop.simpledyphic.model.AppResult
 import jp.hotdrop.simpledyphic.model.DyphicId
 import jp.hotdrop.simpledyphic.model.Record
 import jp.hotdrop.simpledyphic.ui.BaseViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import timber.log.Timber
 
@@ -66,44 +69,64 @@ class CalendarViewModel @Inject constructor(
                 _uiState.update { it.copy(errorMessageResId = null) }
             }
 
-            // Roomの Flow クエリは内部で非メイン実行されるため、ここはそのまま collect を使って問題ない（dispatcherIOは不要）
-            recordRepository.observeAll().collect { result ->
-                when (result) {
-                    is AppResult.Success -> {
-                        val recordsByDate = LinkedHashMap<LocalDate, Record>(result.value.size)
-                        val datesWithMarkers = LinkedHashSet<LocalDate>(result.value.size)
-                        result.value.forEach { record ->
-                            val date = record.date
-                            recordsByDate[date] = record
-                            if (record.hasCalendarMarker()) {
-                                datesWithMarkers += date
+            recordRepository.observeAll()
+                .map { result ->
+                    when (result) {
+                        is AppResult.Success -> AppResult.Success(buildCalendarData(result.value))
+                        is AppResult.Failure -> result
+                    }
+                }
+                .flowOn(Dispatchers.Default)
+                .collect { result ->
+                    when (result) {
+                        is AppResult.Success -> {
+                            val calendarData = result.value
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessageResId = null,
+                                    recordsByDate = calendarData.recordsByDate,
+                                    datesWithMarkers = calendarData.datesWithMarkers
+                                )
                             }
                         }
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessageResId = null,
-                                recordsByDate = recordsByDate,
-                                datesWithMarkers = datesWithMarkers
-                            )
-                        }
-                    }
-                    is AppResult.Failure -> {
-                        Timber.e(result.error, "Failed to observe records")
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessageResId = R.string.calendar_error_load_records
-                            )
+                        is AppResult.Failure -> {
+                            Timber.e(result.error, "Failed to observe records")
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessageResId = R.string.calendar_error_load_records
+                                )
+                            }
                         }
                     }
                 }
+        }
+    }
+
+    private fun buildCalendarData(records: List<Record>): CalendarData {
+        val recordsByDate = LinkedHashMap<LocalDate, Record>(records.size)
+        val datesWithMarkers = LinkedHashSet<LocalDate>(records.size)
+        records.forEach { record ->
+            val date = record.date
+            recordsByDate[date] = record
+            if (record.hasCalendarMarker()) {
+                datesWithMarkers += date
             }
         }
+        return CalendarData(
+            recordsByDate = recordsByDate,
+            datesWithMarkers = datesWithMarkers
+        )
     }
 
     private fun Record.hasCalendarMarker(): Boolean {
         return isToilet || condition != null || (ringfitKcal ?: 0.0) > 0.0 ||
             (ringfitKm ?: 0.0) > 0.0 || (stepCount ?: 0) >= 7000
     }
+
+    private data class CalendarData(
+        val recordsByDate: Map<LocalDate, Record>,
+        val datesWithMarkers: Set<LocalDate>
+    )
 }

@@ -105,6 +105,22 @@
   - `MealArea` を `LazyRow` から `Row + horizontalScroll` に変更。
   - 固定要素に対するlazy管理コスト（subcomposition/measure）を削減。
 
+## 追加レビュー対応（2026-02-14）
+
+### 13. [Done] Calendarのレコード整形処理をDefaultスレッドへオフロード
+- Files:
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarViewModel.kt`
+- 内容:
+  - `observeAll()` の上流で `flow.map { ... }.flowOn(Dispatchers.Default)` を適用し、`recordsByDate` / `datesWithMarkers` の全件整形をMainから分離。
+  - Main側は整形済みデータの `UiState` 反映のみを担当する構成へ変更。
+
+### 14. [Done] RecordEditのHealth同期にin-flightガードを追加
+- Files:
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/record/RecordEditViewModel.kt`
+- 内容:
+  - `healthSyncJob` を追加し、`onHealthSyncRequested()` / `onHealthPermissionResult()` の両経路を `launchHealthSyncIfIdle()` に統一。
+  - 同期中（Job active）は新規同期を起動しないため、重複I/Oと不要な`UiState`更新を抑止。
+
 ## 残課題（性能観点）
 - 現時点で対応対象なし。
 

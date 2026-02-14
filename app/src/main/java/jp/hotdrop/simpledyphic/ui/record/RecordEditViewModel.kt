@@ -46,6 +46,7 @@ class RecordEditViewModel @Inject constructor(
     private val _effects = Channel<RecordEditEffect>(capacity = Channel.BUFFERED)
     val effects: Flow<RecordEditEffect> = _effects.receiveAsFlow()
     private val loadRecordJob: Job = loadRecord()
+    private var healthSyncJob: Job? = null
 
     fun onBreakfastChanged(value: String) {
         updateInput(InputField.BREAKFAST) { it.copy(breakfast = value, errorMessageResId = null) }
@@ -108,7 +109,7 @@ class RecordEditViewModel @Inject constructor(
     }
 
     fun onHealthSyncRequested() {
-        launch {
+        launchHealthSyncIfIdle {
             _uiState.update {
                 it.copy(
                     isHealthSyncing = true,
@@ -175,7 +176,7 @@ class RecordEditViewModel @Inject constructor(
             return
         }
 
-        launch {
+        launchHealthSyncIfIdle {
             _uiState.update { it.copy(isHealthSyncing = true, healthConnectMessageResId = null) }
             importHealthSummary()
         }
@@ -330,6 +331,19 @@ class RecordEditViewModel @Inject constructor(
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun launchHealthSyncIfIdle(block: suspend () -> Unit) {
+        if (healthSyncJob?.isActive == true) {
+            return
+        }
+        healthSyncJob = launch {
+            try {
+                block()
+            } finally {
+                healthSyncJob = null
             }
         }
     }
