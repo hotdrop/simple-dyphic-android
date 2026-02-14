@@ -82,7 +82,6 @@ fun RecordEditRoute(
     )
 
     LaunchedEffect(viewModel) {
-        viewModel.onScreenEntered()
         viewModel.effects.collect { effect ->
             when (effect) {
                 is RecordEditViewModel.RecordEditEffect.RequestHealthPermissions -> {
@@ -90,6 +89,9 @@ fun RecordEditRoute(
                 }
             }
         }
+    }
+    LaunchedEffect(viewModel) {
+        viewModel.onScreenEntered()
     }
 
     RecordEditScreen(

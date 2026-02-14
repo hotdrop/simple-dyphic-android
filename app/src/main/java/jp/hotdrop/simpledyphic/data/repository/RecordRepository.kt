@@ -7,6 +7,9 @@ import jp.hotdrop.simpledyphic.model.AppResult
 import jp.hotdrop.simpledyphic.model.Record
 import jp.hotdrop.simpledyphic.model.appCompletableSuspend
 import jp.hotdrop.simpledyphic.model.appResultSuspend
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -27,6 +30,12 @@ class RecordRepository @Inject constructor(
         return appResultSuspend {
             localDataSource.findAll()
         }
+    }
+
+    fun observeAll(): Flow<AppResult<List<Record>>> {
+        return localDataSource.observeAll()
+            .map { records -> AppResult.Success(records) as AppResult<List<Record>> }
+            .catch { error -> emit(AppResult.Failure(error)) }
     }
 
     suspend fun save(record: Record): AppCompletable {

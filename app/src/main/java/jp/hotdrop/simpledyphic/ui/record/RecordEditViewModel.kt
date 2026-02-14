@@ -15,12 +15,12 @@ import jp.hotdrop.simpledyphic.model.HealthConnectStatus
 import jp.hotdrop.simpledyphic.model.Record
 import jp.hotdrop.simpledyphic.ui.BaseViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import timber.log.Timber
 
@@ -42,8 +42,8 @@ class RecordEditViewModel @Inject constructor(
     )
     val uiState: StateFlow<RecordEditUiState> = _uiState.asStateFlow()
 
-    private val _effects = MutableSharedFlow<RecordEditEffect>()
-    val effects: SharedFlow<RecordEditEffect> = _effects.asSharedFlow()
+    private val _effects = Channel<RecordEditEffect>(capacity = Channel.BUFFERED)
+    val effects: Flow<RecordEditEffect> = _effects.receiveAsFlow()
     private val loadRecordJob: Job = loadRecord()
 
     fun onBreakfastChanged(value: String) {
@@ -124,7 +124,7 @@ class RecordEditViewModel @Inject constructor(
                                 importHealthSummary()
                             } else {
                                 _uiState.update { it.copy(isHealthSyncing = false) }
-                                _effects.emit(
+                                _effects.send(
                                     RecordEditEffect.RequestHealthPermissions(
                                         permissions = healthConnectRepository.requiredPermissions()
                                     )

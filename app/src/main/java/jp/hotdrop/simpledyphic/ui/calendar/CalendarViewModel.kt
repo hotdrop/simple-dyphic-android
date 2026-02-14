@@ -9,6 +9,7 @@ import jp.hotdrop.simpledyphic.data.repository.RecordRepository
 import jp.hotdrop.simpledyphic.model.AppResult
 import jp.hotdrop.simpledyphic.model.DyphicId
 import jp.hotdrop.simpledyphic.ui.BaseViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,18 +23,19 @@ class CalendarViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(CalendarUiState())
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
+    private var observeRecordsJob: Job? = null
 
     init {
         Timber.d("CalendarViewModel initialized")
-        reloadRecords(showLoading = true)
+        observeRecords()
     }
 
     fun onRecordUpdated() {
-        reloadRecords(showLoading = false)
+        _uiState.update { it.copy(errorMessageResId = null) }
     }
 
     fun onRetry() {
-        reloadRecords(showLoading = true)
+        observeRecords()
     }
 
     fun onVisibleMonthChanged(yearMonth: YearMonth) {
@@ -51,32 +53,37 @@ class CalendarViewModel @Inject constructor(
 
     fun selectedDayId(): Int = DyphicId.dateToId(_uiState.value.selectedDate)
 
-    private fun reloadRecords(showLoading: Boolean) {
-        launch {
-            if (showLoading) {
+    private fun observeRecords() {
+        observeRecordsJob?.cancel()
+        observeRecordsJob = launch {
+            val shouldShowLoading = _uiState.value.recordsByDate.isEmpty()
+            if (shouldShowLoading) {
                 _uiState.update { it.copy(isLoading = true, errorMessageResId = null) }
             } else {
                 _uiState.update { it.copy(errorMessageResId = null) }
             }
 
-            when (val result = dispatcherIO { recordRepository.findAll() }) {
-                is AppResult.Success -> {
-                    val recordsByDate = result.value.associateBy { record -> record.date }
-                    _uiState.update { state ->
-                        state.copy(
-                            isLoading = false,
-                            errorMessageResId = null,
-                            recordsByDate = recordsByDate
-                        )
+            // Roomの Flow クエリは内部で非メイン実行されるため、ここはそのまま collect を使って問題ない（dispatcherIOは不要）
+            recordRepository.observeAll().collect { result ->
+                when (result) {
+                    is AppResult.Success -> {
+                        val recordsByDate = result.value.associateBy { record -> record.date }
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessageResId = null,
+                                recordsByDate = recordsByDate
+                            )
+                        }
                     }
-                }
-                is AppResult.Failure -> {
-                    Timber.e(result.error, "Failed to load records")
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessageResId = R.string.calendar_error_load_records
-                        )
+                    is AppResult.Failure -> {
+                        Timber.e(result.error, "Failed to observe records")
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessageResId = R.string.calendar_error_load_records
+                            )
+                        }
                     }
                 }
             }
