@@ -5,6 +5,7 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -16,6 +17,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
+import timber.log.Timber
 
 @Singleton
 class HealthConnectRepository @Inject constructor(
@@ -42,10 +44,12 @@ class HealthConnectRepository @Inject constructor(
 
     suspend fun readDailySummary(date: LocalDate): AppResult<DailyHealthSummary> {
         return appResultSuspend {
-            val client = healthConnectClientOrNull() ?: throw IllegalStateException("Health Connect is not available.")
+            Timber.d("readDailySummary requestedDate=%s", date)
+
+            val client = healthConnectClientOrNull() ?: throw IllegalStateException("ヘルスコネクトが利用できません")
             val grantedPermissions = client.permissionController.getGrantedPermissions()
             if (!grantedPermissions.containsAll(REQUIRED_PERMISSIONS)) {
-                throw SecurityException("Health Connect permissions are missing.")
+                throw SecurityException("ヘルスコネクトへのアクセス権の確認に失敗しました。")
             }
 
             val zoneId = ZoneId.systemDefault()
@@ -53,15 +57,15 @@ class HealthConnectRepository @Inject constructor(
             val end = date.plusDays(1).atStartOfDay(zoneId).toInstant()
             val timeRange = TimeRangeFilter.between(start, end)
 
-            val steps = client.readRecords(
-                ReadRecordsRequest(
-                    recordType = StepsRecord::class,
+            val steps = client.aggregate(
+                AggregateRequest(
+                    metrics = setOf(StepsRecord.COUNT_TOTAL),
                     timeRangeFilter = timeRange
                 )
-            ).records.sumOf { it.count }
+            )[StepsRecord.COUNT_TOTAL] ?: 0L
 
             val burnedKcal = client.readRecords(
-                androidx.health.connect.client.request.ReadRecordsRequest(
+                ReadRecordsRequest(
                     recordType = TotalCaloriesBurnedRecord::class,
                     timeRangeFilter = timeRange
                 )

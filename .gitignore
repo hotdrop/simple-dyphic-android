@@ -15,6 +15,7 @@
 local.properties
 *.keystore
 *.jks
+/app/release
 
 .kotlin
 google-services.json
