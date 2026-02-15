@@ -269,10 +269,23 @@ class RecordEditViewModel @Inject constructor(
     }
 
     private fun applyHealthSummary(summary: DailyHealthSummary) {
-        updateInput(InputField.STEP_COUNT, InputField.HEALTH_KCAL) {
-            it.copy(
-                stepCount = summary.stepCount,
-                healthKcal = summary.burnedKcal,
+        val hasStepCount = summary.stepCount > 0
+        val hasHealthKcal = summary.burnedKcal > 0.0
+
+        if (!hasStepCount && !hasHealthKcal) {
+            _uiState.update {
+                it.copy(
+                    isHealthSyncing = false,
+                    healthConnectMessageResId = R.string.record_health_message_import_failed
+                )
+            }
+            return
+        }
+
+        updateInput(InputField.STEP_COUNT, InputField.HEALTH_KCAL) { current ->
+            current.copy(
+                stepCount = summary.stepCount.takeIf { hasStepCount } ?: current.stepCount,
+                healthKcal = summary.burnedKcal.takeIf { hasHealthKcal } ?: current.healthKcal,
                 isHealthSyncing = false,
                 healthConnectMessageResId = null,
                 errorMessageResId = null
