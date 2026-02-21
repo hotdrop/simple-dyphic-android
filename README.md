@@ -1,5 +1,6 @@
-# このアプリについて
-Codex Appを使ってFlutterアプリをAndroidのComposeで移植してもらった。
+# SimpleDyphic
+体調管理アプリ(Daily physical condition App)の簡易版アプリとして作成しました。
+`https://github.com/hotdrop/simple-dyphic`にFlutter版の同アプリを作っていましたが、Composeと`Codex App`の体験がとても良かったので移植しました。
 
 ## 依頼手順
 1. ルールファイル`AGENTS.md`, `SKILL.md`作成
