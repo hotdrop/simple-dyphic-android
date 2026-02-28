@@ -3,11 +3,14 @@ package jp.hotdrop.simpledyphic.ui.calendar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.YearMonth
-import javax.inject.Inject
 import java.util.LinkedHashMap
 import java.util.LinkedHashSet
+import javax.inject.Inject
 import jp.hotdrop.simpledyphic.R
+import jp.hotdrop.simpledyphic.data.repository.GoalRepository
+import jp.hotdrop.simpledyphic.data.repository.InsightRepository
 import jp.hotdrop.simpledyphic.data.repository.RecordRepository
+import jp.hotdrop.simpledyphic.domain.usecase.WeeklyGoalProgressUseCase
 import jp.hotdrop.simpledyphic.model.AppResult
 import jp.hotdrop.simpledyphic.model.DyphicId
 import jp.hotdrop.simpledyphic.model.Record
@@ -24,24 +27,33 @@ import timber.log.Timber
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
-    private val recordRepository: RecordRepository
+    private val recordRepository: RecordRepository,
+    private val goalRepository: GoalRepository,
+    private val weeklyGoalProgressUseCase: WeeklyGoalProgressUseCase,
+    private val insightRepository: InsightRepository
 ) : BaseViewModel() {
 
     private val _uiState = MutableStateFlow(CalendarUiState())
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
     private var observeRecordsJob: Job? = null
+    private var observeGoalsJob: Job? = null
+    private var weeklyDataJob: Job? = null
 
     init {
         Timber.d("CalendarViewModel initialized")
         observeRecords()
+        observeGoals()
+        loadWeeklyData(_uiState.value.selectedDate)
     }
 
     fun onRecordUpdated() {
-        _uiState.update { it.copy(errorMessageResId = null) }
+        _uiState.update { it.copy(errorMessageResId = null, weeklyErrorMessageResId = null) }
+        loadWeeklyData(_uiState.value.selectedDate)
     }
 
     fun onRetry() {
         observeRecords()
+        loadWeeklyData(_uiState.value.selectedDate)
     }
 
     fun onVisibleMonthChanged(yearMonth: YearMonth) {
@@ -55,6 +67,7 @@ class CalendarViewModel @Inject constructor(
                 currentMonth = YearMonth.from(date)
             )
         }
+        loadWeeklyData(date)
     }
 
     fun selectedDayId(): Int = DyphicId.dateToId(_uiState.value.selectedDate)
@@ -101,6 +114,74 @@ class CalendarViewModel @Inject constructor(
                         }
                     }
                 }
+        }
+    }
+
+    private fun observeGoals() {
+        observeGoalsJob?.cancel()
+        observeGoalsJob = launch {
+            goalRepository.observeWeeklyGoals().collect { result ->
+                when (result) {
+                    is AppResult.Success -> loadWeeklyData(_uiState.value.selectedDate)
+                    is AppResult.Failure -> {
+                        Timber.e(result.error, "Failed to observe weekly goals")
+                        _uiState.update { it.copy(weeklyErrorMessageResId = R.string.calendar_weekly_error_load) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadWeeklyData(anchorDate: LocalDate) {
+        weeklyDataJob?.cancel()
+        weeklyDataJob = launch {
+            _uiState.update {
+                it.copy(
+                    isWeeklyLoading = true,
+                    weeklyErrorMessageResId = null
+                )
+            }
+
+            val progressResult = dispatcherIO { weeklyGoalProgressUseCase.execute(anchorDate) }
+            val insightResult = dispatcherIO { insightRepository.buildConditionActivityInsight(anchorDate) }
+
+            when {
+                progressResult is AppResult.Failure -> {
+                    Timber.e(progressResult.error, "Failed to load weekly goal progress")
+                    _uiState.update {
+                        it.copy(
+                            isWeeklyLoading = false,
+                            weeklyErrorMessageResId = R.string.calendar_weekly_error_load
+                        )
+                    }
+                }
+
+                insightResult is AppResult.Failure -> {
+                    Timber.e(insightResult.error, "Failed to load weekly insight")
+                    _uiState.update {
+                        it.copy(
+                            isWeeklyLoading = false,
+                            weeklyErrorMessageResId = R.string.calendar_weekly_error_load
+                        )
+                    }
+                }
+
+                progressResult is AppResult.Success && insightResult is AppResult.Success -> {
+                    val progressSummary = progressResult.value
+                    val insight = insightResult.value
+                    _uiState.update {
+                        it.copy(
+                            isWeeklyLoading = false,
+                            weeklyErrorMessageResId = null,
+                            weeklyStartDate = progressSummary.weekRange.startDate,
+                            weeklyEndDate = progressSummary.weekRange.endDate,
+                            weeklyGoalProgresses = progressSummary.progresses,
+                            weeklyInsights = insight.metricInsights,
+                            hasBadConditionDaysInWeek = insight.badConditionDates.isNotEmpty()
+                        )
+                    }
+                }
+            }
         }
     }
 

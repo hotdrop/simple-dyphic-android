@@ -9,7 +9,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import jp.hotdrop.simpledyphic.data.local.db.AppDatabase
+import jp.hotdrop.simpledyphic.data.local.db.AppDatabaseMigrations
 import jp.hotdrop.simpledyphic.data.local.db.RecordDao
+import jp.hotdrop.simpledyphic.data.local.db.WeeklyGoalDao
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -21,10 +23,16 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
-        ).build()
+        )
+            .addMigrations(AppDatabaseMigrations.MIGRATION_1_2)
+            .build()
     }
 
     @Provides
     @Singleton
     fun provideRecordDao(database: AppDatabase): RecordDao = database.recordDao()
+
+    @Provides
+    @Singleton
+    fun provideWeeklyGoalDao(database: AppDatabase): WeeklyGoalDao = database.weeklyGoalDao()
 }

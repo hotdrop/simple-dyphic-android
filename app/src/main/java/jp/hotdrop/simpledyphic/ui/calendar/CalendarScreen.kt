@@ -62,12 +62,16 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import jp.hotdrop.simpledyphic.R
+import jp.hotdrop.simpledyphic.model.HealthMetricType
+import jp.hotdrop.simpledyphic.model.MetricAvailability
 import jp.hotdrop.simpledyphic.ui.components.ConditionIcon
 import jp.hotdrop.simpledyphic.ui.components.ErrorContent
 import jp.hotdrop.simpledyphic.ui.components.LoadingContent
 import jp.hotdrop.simpledyphic.model.ConditionType
 import jp.hotdrop.simpledyphic.model.DyphicId
 import jp.hotdrop.simpledyphic.model.Record
+import jp.hotdrop.simpledyphic.model.WeeklyGoalMetricProgress
+import jp.hotdrop.simpledyphic.model.WeeklyMetricInsight
 import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -178,7 +182,8 @@ private fun CalendarContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = 12.dp),
+            .verticalScroll(rememberScrollState())
+            .padding(top = 12.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(
@@ -267,13 +272,27 @@ private fun CalendarContent(
             }
         }
 
+        WeeklyDashboardCard(
+            uiState = uiState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        )
+
+        WeeklyInsightCard(
+            uiState = uiState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        )
+
         SummaryCard(
             selectedDate = uiState.selectedDate,
             record = uiState.selectedRecord,
             onEditSelectedDate = onEditSelectedDate,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .padding(horizontal = 16.dp)
         )
     }
 }
@@ -420,6 +439,295 @@ private fun Modifier.clickableWithRole(onClick: () -> Unit): Modifier =
     )
 
 @Composable
+private fun WeeklyDashboardCard(
+    uiState: CalendarUiState,
+    modifier: Modifier = Modifier
+) {
+    val locale = Locale.getDefault()
+    val periodFormatter = remember(locale) {
+        DateTimeFormatter.ofPattern("M/d", locale)
+    }
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.calendar_weekly_dashboard_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            val start = uiState.weeklyStartDate
+            val end = uiState.weeklyEndDate
+            if (start != null && end != null) {
+                Text(
+                    text = stringResource(
+                        R.string.calendar_weekly_dashboard_period,
+                        start.format(periodFormatter),
+                        end.format(periodFormatter)
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            when {
+                uiState.isWeeklyLoading -> {
+                    Text(text = stringResource(R.string.calendar_weekly_loading))
+                }
+
+                uiState.weeklyErrorMessageResId != null -> {
+                    Text(
+                        text = stringResource(uiState.weeklyErrorMessageResId),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                else -> {
+                    uiState.weeklyGoalProgresses.forEachIndexed { index, progress ->
+                        if (index > 0) {
+                            HorizontalDivider()
+                        }
+                        WeeklyGoalProgressRow(progress = progress)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeeklyGoalProgressRow(
+    progress: WeeklyGoalMetricProgress
+) {
+    val metricType = progress.progress.metricType
+    val metricName = stringResource(metricNameResId(metricType))
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = metricName,
+            style = MaterialTheme.typography.titleSmall
+        )
+        Text(
+            text = stringResource(
+                R.string.calendar_weekly_goal_value,
+                formatMetricValue(metricType, progress.progress.targetValue)
+            ),
+            style = MaterialTheme.typography.bodySmall
+        )
+        when (progress.availability) {
+            MetricAvailability.AVAILABLE -> {
+                Text(
+                    text = stringResource(
+                        R.string.calendar_weekly_actual_value,
+                        formatMetricValue(metricType, progress.progress.actualValue)
+                    ),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = stringResource(
+                        R.string.calendar_weekly_rate_value,
+                        progress.progress.achievementRate
+                    ),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            MetricAvailability.PERMISSION_MISSING -> {
+                Text(
+                    text = stringResource(R.string.calendar_weekly_not_available_permission),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            MetricAvailability.SOURCE_UNAVAILABLE -> {
+                Text(
+                    text = stringResource(R.string.calendar_weekly_not_available_source),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeeklyInsightCard(
+    uiState: CalendarUiState,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.calendar_weekly_insight_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            when {
+                uiState.isWeeklyLoading -> {
+                    Text(text = stringResource(R.string.calendar_weekly_loading))
+                }
+
+                uiState.weeklyErrorMessageResId != null -> {
+                    Text(
+                        text = stringResource(uiState.weeklyErrorMessageResId),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                !uiState.hasBadConditionDaysInWeek -> {
+                    Text(
+                        text = stringResource(R.string.calendar_weekly_insight_empty),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                else -> {
+                    uiState.weeklyInsights.forEachIndexed { index, insight ->
+                        if (index > 0) {
+                            HorizontalDivider()
+                        }
+                        WeeklyInsightRow(insight = insight)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeeklyInsightRow(insight: WeeklyMetricInsight) {
+    val metricType = insight.metricType
+    val prevText = insight.deltaFromPreviousWeek?.let {
+        formatSignedMetricValue(metricType, it)
+    } ?: stringResource(R.string.calendar_weekly_insight_data_insufficient)
+
+    val avgText = insight.deltaFromWeekAverage?.let {
+        formatSignedMetricValue(metricType, it)
+    } ?: stringResource(R.string.calendar_weekly_insight_data_insufficient)
+
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = stringResource(metricNameResId(metricType)),
+            style = MaterialTheme.typography.titleSmall
+        )
+        Text(
+            text = insight.comment,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(
+            text = stringResource(R.string.calendar_weekly_insight_vs_previous, prevText),
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(
+            text = stringResource(R.string.calendar_weekly_insight_vs_average, avgText),
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
+}
+
+@Composable
+private fun formatMetricValue(metricType: HealthMetricType, value: Double): String {
+    return when (metricType) {
+        HealthMetricType.STEP_COUNT -> String.format(
+            Locale.getDefault(),
+            "%.0f %s",
+            value,
+            stringResource(R.string.health_metric_unit_step)
+        )
+
+        HealthMetricType.ACTIVE_KCAL -> String.format(
+            Locale.getDefault(),
+            "%.1f %s",
+            value,
+            stringResource(R.string.health_metric_unit_kcal)
+        )
+
+        HealthMetricType.EXERCISE_MINUTES -> String.format(
+            Locale.getDefault(),
+            "%.0f %s",
+            value,
+            stringResource(R.string.health_metric_unit_minute)
+        )
+
+        HealthMetricType.DISTANCE_KM -> String.format(
+            Locale.getDefault(),
+            "%.1f %s",
+            value,
+            stringResource(R.string.health_metric_unit_km)
+        )
+
+        HealthMetricType.FLOORS_CLIMBED -> String.format(
+            Locale.getDefault(),
+            "%.0f %s",
+            value,
+            stringResource(R.string.health_metric_unit_floor)
+        )
+    }
+}
+
+@Composable
+private fun formatSignedMetricValue(metricType: HealthMetricType, value: Double): String {
+    return when (metricType) {
+        HealthMetricType.STEP_COUNT -> String.format(
+            Locale.getDefault(),
+            "%+.0f %s",
+            value,
+            stringResource(R.string.health_metric_unit_step)
+        )
+
+        HealthMetricType.ACTIVE_KCAL -> String.format(
+            Locale.getDefault(),
+            "%+.1f %s",
+            value,
+            stringResource(R.string.health_metric_unit_kcal)
+        )
+
+        HealthMetricType.EXERCISE_MINUTES -> String.format(
+            Locale.getDefault(),
+            "%+.0f %s",
+            value,
+            stringResource(R.string.health_metric_unit_minute)
+        )
+
+        HealthMetricType.DISTANCE_KM -> String.format(
+            Locale.getDefault(),
+            "%+.1f %s",
+            value,
+            stringResource(R.string.health_metric_unit_km)
+        )
+
+        HealthMetricType.FLOORS_CLIMBED -> String.format(
+            Locale.getDefault(),
+            "%+.0f %s",
+            value,
+            stringResource(R.string.health_metric_unit_floor)
+        )
+    }
+}
+
+private fun metricNameResId(metricType: HealthMetricType): Int {
+    return when (metricType) {
+        HealthMetricType.STEP_COUNT -> R.string.health_metric_step_count
+        HealthMetricType.ACTIVE_KCAL -> R.string.health_metric_active_kcal
+        HealthMetricType.EXERCISE_MINUTES -> R.string.health_metric_exercise_minutes
+        HealthMetricType.DISTANCE_KM -> R.string.health_metric_distance_km
+        HealthMetricType.FLOORS_CLIMBED -> R.string.health_metric_floors_climbed
+    }
+}
+
+@Composable
 private fun SummaryCard(
     selectedDate: LocalDate,
     record: Record?,
@@ -435,14 +743,13 @@ private fun SummaryCard(
     Card(
         modifier = modifier
             .clickable(onClick = onEditSelectedDate),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .fillMaxWidth()
                 .padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.Start

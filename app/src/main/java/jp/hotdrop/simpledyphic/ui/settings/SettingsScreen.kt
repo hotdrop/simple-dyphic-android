@@ -47,6 +47,7 @@ import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
 
 @Composable
 fun SettingsRoute(
+    onNavigateToWeeklyGoals: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -58,6 +59,7 @@ fun SettingsRoute(
         onSignOutClick = viewModel::onSignOutClick,
         onBackupClick = viewModel::onBackupClick,
         onRestoreClick = viewModel::onRestoreClick,
+        onWeeklyGoalSettingsClick = onNavigateToWeeklyGoals,
         onDataSyncActionConfirm = viewModel::onDataSyncActionConfirm,
         onDataSyncActionDismiss = viewModel::onDataSyncActionDismiss
     )
@@ -72,6 +74,7 @@ fun SettingsScreen(
     onSignOutClick: () -> Unit,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
+    onWeeklyGoalSettingsClick: () -> Unit,
     onDataSyncActionConfirm: () -> Unit,
     onDataSyncActionDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -83,6 +86,7 @@ fun SettingsScreen(
         onSignOutClick = onSignOutClick,
         onBackupClick = onBackupClick,
         onRestoreClick = onRestoreClick,
+        onWeeklyGoalSettingsClick = onWeeklyGoalSettingsClick,
         modifier = modifier
     )
 
@@ -152,6 +156,7 @@ private fun SettingsContent(
     onSignOutClick: () -> Unit,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
+    onWeeklyGoalSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -182,6 +187,26 @@ private fun SettingsContent(
                             contentDescription = null
                         )
                     }
+                )
+                HorizontalDivider()
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text(text = stringResource(R.string.weekly_goal_settings_item_title)) },
+                    supportingContent = { Text(text = stringResource(R.string.weekly_goal_settings_item_summary)) },
+                    trailingContent = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                            contentDescription = null
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            enabled = !uiState.isLoading,
+                            onClick = onWeeklyGoalSettingsClick
+                        )
                 )
                 HorizontalDivider()
             }
@@ -315,6 +340,7 @@ private fun SettingsScreenSignedOutPreview() {
             onSignOutClick = {},
             onBackupClick = {},
             onRestoreClick = {},
+            onWeeklyGoalSettingsClick = {},
             onDataSyncActionConfirm = {},
             onDataSyncActionDismiss = {}
         )
@@ -338,6 +364,7 @@ private fun SettingsScreenSignedInPreview() {
             onSignOutClick = {},
             onBackupClick = {},
             onRestoreClick = {},
+            onWeeklyGoalSettingsClick = {},
             onDataSyncActionConfirm = {},
             onDataSyncActionDismiss = {}
         )
@@ -362,6 +389,7 @@ private fun SettingsScreenBackupConfirmPreview() {
             onSignOutClick = {},
             onBackupClick = {},
             onRestoreClick = {},
+            onWeeklyGoalSettingsClick = {},
             onDataSyncActionConfirm = {},
             onDataSyncActionDismiss = {}
         )

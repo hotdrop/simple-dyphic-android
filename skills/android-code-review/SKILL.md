@@ -15,11 +15,14 @@ description: このアプリの Android 実装をレビューするスキル。C
 - Compose:
   - Route/Screen 分離が守られているか。
   - 条件分岐 UI の Preview が揃っているか。
+  - Preview が通常/ローディング/エラー/空状態 + 画面固有状態を網羅しているか。
   - 文字列・色・寸法の直書きがないか。
 - ViewModel / Repository:
   - 層責務が混在していないか。
   - `UiState` とイベントが明示されているか。
   - Hilt 以外の DI が混入していないか。
+  - Room 変更時に `version` 更新・Migration・Migration テストが揃っているか。
+  - Health Connect 指標で「0実績」と「未取得」が分離されているか。
 - Coroutines / Flow:
   - キャンセル安全性があるか。
   - 競合ジョブのガードがあるか。

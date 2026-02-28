@@ -29,6 +29,8 @@
 - 文字列/色/寸法はリソースまたはテーマで管理する
 - 例外は握りつぶさず、ユーザー向け表示とログを分離する
 - 実装後は対象機能の検証（テストまたは手動確認）を必ず実施する
+- Room スキーマ変更時は「DB version 更新 + Migration 実装 + Migration テスト追加」を同一タスクで完了させる
+- Health Connect 指標の単位・権限・未取得ルールは `docs/HealthConnectMetricSpec.md` を基準に実装する
 
 ## SKILL 用途マトリクス
 - UI 実装・改修: `android-compose-ui`
@@ -37,11 +39,25 @@
 - Firebase 連携実装・改修: `android-firebase`
 - コードレビュー: `android-code-review`
 
+## SKILL 適用ルール
+- 本リポジトリでの SKILL 運用は `skills/<skill-name>/SKILL.md` を正とする
+- 用途マトリクスに該当する作業では、対応する SKILL の手順・完了チェックを必ず満たす
+- 複数領域に跨るタスクは、該当 SKILL を併用して不足観点を残さない
+
+## 進捗管理ドキュメント標準
+- 計画/進捗ボードは `docs/ActPlan.md` を使用する
+- 完了報告ログは `docs/CompleteReport.md` を使用する
+- タスク開始時に対象項目を `DOING` へ更新し、完了時に `DONE` と完了内容を反映する
+- `CompleteReport.md` は項目を上書きせず、タスク単位で追記する
+
 ## 作業時の必須出力
 - 変更ファイル一覧（プロジェクトルート基準）
 - 実施内容（要点）
 - 実行したテスト/確認結果
 - 残課題・次アクション
+- 出力更新タイミング:
+  - 実装着手時: `ActPlan.md` の対象項目を更新
+  - 実装完了時: 上記4項目を `CompleteReport.md` へ追記し、`ActPlan.md` を `DONE` へ更新
 
 ## 禁止事項
 - クロスプラットフォーム向けコードの新規追加
