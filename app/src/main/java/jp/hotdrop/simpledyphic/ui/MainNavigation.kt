@@ -27,6 +27,7 @@ import jp.hotdrop.simpledyphic.ui.calendar.CalendarRoute
 import jp.hotdrop.simpledyphic.ui.record.RecordEditRoute
 import jp.hotdrop.simpledyphic.ui.record.RecordEditViewModel
 import jp.hotdrop.simpledyphic.ui.settings.SettingsRoute
+import jp.hotdrop.simpledyphic.ui.settings.WeeklyGoalSettingsRoute
 
 @Composable
 fun MainNavigation() {
@@ -83,7 +84,14 @@ fun MainNavigation() {
                 )
             }
             composable(TopLevelDestination.Settings.route) {
-                SettingsRoute()
+                SettingsRoute(
+                    onNavigateToWeeklyGoals = { navController.navigate(WeeklyGoalSettingsDestination.route) }
+                )
+            }
+            composable(WeeklyGoalSettingsDestination.route) {
+                WeeklyGoalSettingsRoute(
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable(
                 route = "record/{${RecordEditViewModel.RECORD_ID_ARG}}",
@@ -129,4 +137,8 @@ private sealed class TopLevelDestination(
         labelResId = R.string.tab_settings,
         icon = { Icon(imageVector = Icons.Outlined.Settings, contentDescription = null) }
     )
+}
+
+private object WeeklyGoalSettingsDestination {
+    const val route: String = "settings/weekly-goals"
 }

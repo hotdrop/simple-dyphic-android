@@ -117,6 +117,7 @@ class Phase8UserFlowUiTest {
                     onRestoreClick = {
                         uiState = uiState.copy(pendingDataSyncAction = SettingsDataSyncAction.Restore)
                     },
+                    onWeeklyGoalSettingsClick = {},
                     onDataSyncActionConfirm = {
                         backupRequested = true
                         uiState = uiState.copy(pendingDataSyncAction = null)
