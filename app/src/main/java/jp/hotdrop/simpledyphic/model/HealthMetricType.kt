@@ -4,6 +4,5 @@ enum class HealthMetricType {
     STEP_COUNT,
     ACTIVE_KCAL,
     EXERCISE_MINUTES,
-    DISTANCE_KM,
-    FLOORS_CLIMBED
+    DISTANCE_KM
 }

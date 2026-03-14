@@ -48,8 +48,7 @@ class GoalRepository @Inject constructor(
             WeeklyGoal(metricType = HealthMetricType.STEP_COUNT, targetValue = 70_000.0),
             WeeklyGoal(metricType = HealthMetricType.ACTIVE_KCAL, targetValue = 2_100.0),
             WeeklyGoal(metricType = HealthMetricType.EXERCISE_MINUTES, targetValue = 150.0),
-            WeeklyGoal(metricType = HealthMetricType.DISTANCE_KM, targetValue = 21.0),
-            WeeklyGoal(metricType = HealthMetricType.FLOORS_CLIMBED, targetValue = 70.0)
+            WeeklyGoal(metricType = HealthMetricType.DISTANCE_KM, targetValue = 21.0)
         )
     }
 }

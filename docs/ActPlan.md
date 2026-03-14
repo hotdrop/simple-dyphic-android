@@ -19,3 +19,4 @@
 | G2 | 全員 | IR-04, IR-05, IR-06 | DONE | local | なし | IR-07へ移行 |
 | IR-07 | UI | IR-05, IR-06 | DONE | local | なし | IR-08へ移行 |
 | IR-08 | PL+QA | IR-07 | DONE | local | なし | 提出 |
+| CH-2026-03-14 | UI | IR-08 | DONE | local | なし | Health Connect 指標を4項目構成へ整理済み |

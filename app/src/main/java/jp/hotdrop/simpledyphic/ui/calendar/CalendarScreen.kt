@@ -272,6 +272,15 @@ private fun CalendarContent(
             }
         }
 
+        SummaryCard(
+            selectedDate = uiState.selectedDate,
+            record = uiState.selectedRecord,
+            onEditSelectedDate = onEditSelectedDate,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        )
+
         WeeklyDashboardCard(
             uiState = uiState,
             modifier = Modifier
@@ -281,15 +290,6 @@ private fun CalendarContent(
 
         WeeklyInsightCard(
             uiState = uiState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        )
-
-        SummaryCard(
-            selectedDate = uiState.selectedDate,
-            record = uiState.selectedRecord,
-            onEditSelectedDate = onEditSelectedDate,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -667,13 +667,6 @@ private fun formatMetricValue(metricType: HealthMetricType, value: Double): Stri
             value,
             stringResource(R.string.health_metric_unit_km)
         )
-
-        HealthMetricType.FLOORS_CLIMBED -> String.format(
-            Locale.getDefault(),
-            "%.0f %s",
-            value,
-            stringResource(R.string.health_metric_unit_floor)
-        )
     }
 }
 
@@ -707,13 +700,6 @@ private fun formatSignedMetricValue(metricType: HealthMetricType, value: Double)
             value,
             stringResource(R.string.health_metric_unit_km)
         )
-
-        HealthMetricType.FLOORS_CLIMBED -> String.format(
-            Locale.getDefault(),
-            "%+.0f %s",
-            value,
-            stringResource(R.string.health_metric_unit_floor)
-        )
     }
 }
 
@@ -723,7 +709,6 @@ private fun metricNameResId(metricType: HealthMetricType): Int {
         HealthMetricType.ACTIVE_KCAL -> R.string.health_metric_active_kcal
         HealthMetricType.EXERCISE_MINUTES -> R.string.health_metric_exercise_minutes
         HealthMetricType.DISTANCE_KM -> R.string.health_metric_distance_km
-        HealthMetricType.FLOORS_CLIMBED -> R.string.health_metric_floors_climbed
     }
 }
 

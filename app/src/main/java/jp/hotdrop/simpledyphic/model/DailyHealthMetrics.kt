@@ -7,8 +7,7 @@ data class DailyHealthMetrics(
     val stepCount: HealthMetricValue,
     val activeKcal: HealthMetricValue,
     val exerciseMinutes: HealthMetricValue,
-    val distanceKm: HealthMetricValue,
-    val floorsClimbed: HealthMetricValue
+    val distanceKm: HealthMetricValue
 ) {
     val date: LocalDate
         get() = DyphicId.idToDate(dateId)
@@ -19,7 +18,6 @@ data class DailyHealthMetrics(
             HealthMetricType.ACTIVE_KCAL -> activeKcal
             HealthMetricType.EXERCISE_MINUTES -> exerciseMinutes
             HealthMetricType.DISTANCE_KM -> distanceKm
-            HealthMetricType.FLOORS_CLIMBED -> floorsClimbed
         }
     }
 }

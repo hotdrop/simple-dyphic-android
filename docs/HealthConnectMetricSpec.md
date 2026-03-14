@@ -9,7 +9,6 @@
 | `ACTIVE_KCAL` | 活動消費kcal | kcal | `TotalCaloriesBurnedRecord` | `android.permission.health.READ_TOTAL_CALORIES_BURNED` |
 | `EXERCISE_MINUTES` | 運動時間 | 分 | `ExerciseSessionRecord` | `android.permission.health.READ_EXERCISE` |
 | `DISTANCE_KM` | 移動距離 | km | `DistanceRecord` | `android.permission.health.READ_DISTANCE` |
-| `FLOORS_CLIMBED` | 階段上昇 | 階 | `FloorsClimbedRecord` | `android.permission.health.READ_FLOORS_CLIMBED` |
 
 ## availability 定義
 - `AVAILABLE`: データ取得可能（値が `0` の場合も含む）

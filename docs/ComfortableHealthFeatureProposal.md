@@ -43,7 +43,6 @@
   - 活動消費kcal
   - 運動時間（分）
   - 移動距離（km）
-  - 階段上昇（階）
 - 仕様案:
   - 指標ごとに「目標値」「実績値」「達成率（%）」を表示
   - 100%超過達成も表示（上限で丸めない）
@@ -52,12 +51,11 @@
   - 週の途中で調整ができる
   - 週末の振り返りが容易になる
 
-### B. Health Connect拡張取得（運動・距離・階段）
+### B. Health Connect拡張取得（運動・距離）
 - 目的: 行動量の粒度を上げ、体調との関連分析を可能にする
 - 追加取得候補（例）:
   - 運動時間
   - 移動距離
-  - 階段上昇
 - 仕様案:
   - 権限未許可時は取得可能な指標のみ反映
   - 未取得と0実績を区別して表示
@@ -68,7 +66,7 @@
 - 目的: 体調不良が起きる前後の行動変化を見える化する
 - 仕様案:
   - 体調が「悪い」日の前後2〜3日を自動集計
-  - 歩数、kcal、運動時間、距離、階段の差分を表示
+  - 歩数、kcal、運動時間、距離の差分を表示
   - 「先週比」「平均との差」でコメント生成
 - 期待効果:
   - 自分専用の悪化トリガーを把握しやすくなる
@@ -105,7 +103,7 @@
 | 機能 | 健康管理への有益性 | 実装コスト | 優先度 |
 |---|---|---|---|
 | 週間目標達成率ダッシュボード | 高 | 中 | S |
-| Health Connect拡張（運動・距離・階段） | 高 | 中 | S |
+| Health Connect拡張（運動・距離） | 高 | 中 | S |
 | 体調×活動インサイト | 高 | 中 | A |
 | 未達/過負荷アラート | 中 | 中 | A |
 | 週次レビュー自動生成 | 中 | 低〜中 | B |
@@ -119,8 +117,7 @@ enum class HealthMetricType {
     STEP_COUNT,
     ACTIVE_KCAL,
     EXERCISE_MINUTES,
-    DISTANCE_KM,
-    FLOORS_CLIMBED
+    DISTANCE_KM
 }
 
 data class DailyHealthMetrics(
@@ -128,8 +125,7 @@ data class DailyHealthMetrics(
     val stepCount: Int?,
     val activeKcal: Double?,
     val exerciseMinutes: Int?,
-    val distanceKm: Double?,
-    val floorsClimbed: Int?
+    val distanceKm: Double?
 )
 
 data class WeeklyGoal(
@@ -172,7 +168,8 @@ data class WeeklyGoalProgress(
 
 ## 10. 実施順（推奨）
 1. 週間目標達成率ダッシュボード
-2. Health Connect拡張（運動・距離・階段）
+2. Health Connect拡張（運動・距離）
+2. Health Connect拡張（運動・距離）
 3. 体調×活動インサイト
 4. 未達/過負荷アラート
 5. 週次レビュー自動生成

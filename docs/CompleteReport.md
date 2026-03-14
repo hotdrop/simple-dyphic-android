@@ -173,3 +173,16 @@
   - `./gradlew :app:compileDebugAndroidTestKotlin` 成功。
 - 残課題・次アクション
   - MVP(A〜C)としては完了。次は中期機能（D/E）への展開検討。
+
+## CH-2026-03-14
+- 変更ファイル一覧
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+- 実施内容（要点）
+  - 未使用になった Health Connect 指標を型・画面・Repository・Manifest から削除し、4指標構成に統一。
+  - Health Connect 指標仕様ドキュメントと進捗ログを実装内容に合わせて更新。
+- 実行したテスト/確認結果
+  - `./gradlew :app:compileDebugKotlin` 成功。
+- 残課題・次アクション
+  - 必要に応じて実機またはエミュレータで Calendar 画面の表示順と欠落項目を目視確認する。

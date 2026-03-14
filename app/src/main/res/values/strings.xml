@@ -70,12 +70,10 @@
     <string name="health_metric_active_kcal">活動消費kcal</string>
     <string name="health_metric_exercise_minutes">運動時間</string>
     <string name="health_metric_distance_km">移動距離</string>
-    <string name="health_metric_floors_climbed">階段上昇</string>
     <string name="health_metric_unit_step">歩</string>
     <string name="health_metric_unit_kcal">kcal</string>
     <string name="health_metric_unit_minute">分</string>
     <string name="health_metric_unit_km">km</string>
-    <string name="health_metric_unit_floor">階</string>
     <string name="weekly_goal_settings_item_title">週間目標設定</string>
     <string name="weekly_goal_settings_item_summary">歩数・運動時間などの週目標を管理</string>
     <string name="weekly_goal_title">週間目標設定</string>

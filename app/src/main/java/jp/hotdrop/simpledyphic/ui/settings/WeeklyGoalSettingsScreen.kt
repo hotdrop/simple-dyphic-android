@@ -180,7 +180,6 @@ private fun metricName(metricType: HealthMetricType): String {
         HealthMetricType.ACTIVE_KCAL -> R.string.health_metric_active_kcal
         HealthMetricType.EXERCISE_MINUTES -> R.string.health_metric_exercise_minutes
         HealthMetricType.DISTANCE_KM -> R.string.health_metric_distance_km
-        HealthMetricType.FLOORS_CLIMBED -> R.string.health_metric_floors_climbed
     }
     return stringResource(resId)
 }
@@ -192,7 +191,6 @@ private fun metricUnit(metricType: HealthMetricType): String {
         HealthMetricType.ACTIVE_KCAL -> R.string.health_metric_unit_kcal
         HealthMetricType.EXERCISE_MINUTES -> R.string.health_metric_unit_minute
         HealthMetricType.DISTANCE_KM -> R.string.health_metric_unit_km
-        HealthMetricType.FLOORS_CLIMBED -> R.string.health_metric_unit_floor
     }
     return stringResource(resId)
 }
@@ -297,11 +295,6 @@ private fun previewGoalInputs(): List<WeeklyGoalInputUiModel> {
         WeeklyGoalInputUiModel(
             metricType = HealthMetricType.DISTANCE_KM,
             targetInput = "21",
-            enabled = true
-        ),
-        WeeklyGoalInputUiModel(
-            metricType = HealthMetricType.FLOORS_CLIMBED,
-            targetInput = "70",
             enabled = true
         )
     )
