@@ -5,7 +5,6 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
-import androidx.health.connect.client.records.FloorsClimbedRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.AggregateRequest
@@ -171,25 +170,12 @@ class HealthConnectRepository @Inject constructor(
             ).records.sumOf { it.distance.inKilometers }
         }
 
-        val floorsClimbed = readMetricValue(
-            isGranted = grantedMetricTypes.contains(HealthMetricType.FLOORS_CLIMBED),
-            metricType = HealthMetricType.FLOORS_CLIMBED
-        ) {
-            client.readRecords(
-                ReadRecordsRequest(
-                    recordType = FloorsClimbedRecord::class,
-                    timeRangeFilter = timeRange
-                )
-            ).records.sumOf { it.floors }
-        }
-
         return DailyHealthMetrics(
             dateId = DyphicId.dateToId(date),
             stepCount = steps,
             activeKcal = activeKcal,
             exerciseMinutes = exerciseMinutes,
-            distanceKm = distanceKm,
-            floorsClimbed = floorsClimbed
+            distanceKm = distanceKm
         )
     }
 
@@ -240,8 +226,7 @@ class HealthConnectRepository @Inject constructor(
                 stepCount = unavailableValue,
                 activeKcal = unavailableValue,
                 exerciseMinutes = unavailableValue,
-                distanceKm = unavailableValue,
-                floorsClimbed = unavailableValue
+                distanceKm = unavailableValue
             )
             date = date.plusDays(1)
         }
@@ -263,8 +248,7 @@ class HealthConnectRepository @Inject constructor(
             HealthMetricType.STEP_COUNT to HealthPermission.getReadPermission(StepsRecord::class),
             HealthMetricType.ACTIVE_KCAL to HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
             HealthMetricType.EXERCISE_MINUTES to HealthPermission.getReadPermission(ExerciseSessionRecord::class),
-            HealthMetricType.DISTANCE_KM to HealthPermission.getReadPermission(DistanceRecord::class),
-            HealthMetricType.FLOORS_CLIMBED to HealthPermission.getReadPermission(FloorsClimbedRecord::class)
+            HealthMetricType.DISTANCE_KM to HealthPermission.getReadPermission(DistanceRecord::class)
         )
 
         private val DAILY_SUMMARY_PERMISSIONS: Set<String> = setOf(

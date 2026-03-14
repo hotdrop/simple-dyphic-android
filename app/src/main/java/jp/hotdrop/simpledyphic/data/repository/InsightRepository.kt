@@ -140,7 +140,6 @@ class InsightRepository @Inject constructor(
             HealthMetricType.ACTIVE_KCAL -> 100.0
             HealthMetricType.EXERCISE_MINUTES -> 20.0
             HealthMetricType.DISTANCE_KM -> 1.0
-            HealthMetricType.FLOORS_CLIMBED -> 5.0
         }
     }
 }

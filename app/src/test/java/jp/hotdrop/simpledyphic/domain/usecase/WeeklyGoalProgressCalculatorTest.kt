@@ -47,16 +47,14 @@ class WeeklyGoalProgressCalculatorTest {
         step: HealthMetricValue = HealthMetricValue(MetricAvailability.SOURCE_UNAVAILABLE, null),
         activeKcal: HealthMetricValue = HealthMetricValue(MetricAvailability.SOURCE_UNAVAILABLE, null),
         exerciseMinutes: HealthMetricValue = HealthMetricValue(MetricAvailability.SOURCE_UNAVAILABLE, null),
-        distance: HealthMetricValue = HealthMetricValue(MetricAvailability.SOURCE_UNAVAILABLE, null),
-        floors: HealthMetricValue = HealthMetricValue(MetricAvailability.SOURCE_UNAVAILABLE, null)
+        distance: HealthMetricValue = HealthMetricValue(MetricAvailability.SOURCE_UNAVAILABLE, null)
     ): DailyHealthMetrics {
         return DailyHealthMetrics(
             dateId = 20260223,
             stepCount = step,
             activeKcal = activeKcal,
             exerciseMinutes = exerciseMinutes,
-            distanceKm = distance,
-            floorsClimbed = floors
+            distanceKm = distance
         )
     }
 }

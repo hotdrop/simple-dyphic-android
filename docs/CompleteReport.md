@@ -173,3 +173,45 @@
   - `./gradlew :app:compileDebugAndroidTestKotlin` 成功。
 - 残課題・次アクション
   - MVP(A〜C)としては完了。次は中期機能（D/E）への展開検討。
+
+## CH-2026-03-14
+- 変更ファイル一覧
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+- 実施内容（要点）
+  - 未使用になった Health Connect 指標を型・画面・Repository・Manifest から削除し、4指標構成に統一。
+  - Health Connect 指標仕様ドキュメントと進捗ログを実装内容に合わせて更新。
+- 実行したテスト/確認結果
+  - `./gradlew :app:compileDebugKotlin` 成功。
+- 残課題・次アクション
+  - 必要に応じて実機またはエミュレータで Calendar 画面の表示順と欠落項目を目視確認する。
+
+## CH-2026-03-14-PREVIEW
+- 変更ファイル一覧
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+- 実施内容（要点）
+  - `WeeklyDashboardCard` を単体確認できる Preview を追加。
+  - 通常表示に加えて `Loading` と `Error` の Preview も用意し、状態ごとの差分を確認しやすくした。
+  - Preview 用の `CalendarUiState` サンプルデータを追加し、権限未許可・取得不可の行も再現した。
+- 実行したテスト/確認結果
+  - `./gradlew :app:compileDebugKotlin` 成功。
+- 残課題・次アクション
+  - Android Studio の Compose Preview 上でカードの改行量と情報密度を目視確認する。
+
+## CH-2026-03-14-DASHBOARD-UI
+- 変更ファイル一覧
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt`
+  - `app/src/main/res/values/strings.xml`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+- 実施内容（要点）
+  - `WeeklyDashboardCard` の各行を、達成状態がひと目で分かる強調カード UI に変更。
+  - 達成済みは `CLEAR!` 表示と達成バッジ、未達成は進捗バーと大きな達成率、未取得は専用ステータスで見分けられるようにした。
+  - 目標値と実績値を小カード化し、数値の比較がしやすいレイアウトに整理した。
+- 実行したテスト/確認結果
+  - `./gradlew :app:compileDebugKotlin` 成功。
+- 残課題・次アクション
+  - Compose Preview または実機で、達成率 100% 超の表示時にテキスト折り返しや色コントラストが問題ないか確認する。
