@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -20,12 +21,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Timelapse
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,7 +44,9 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -507,52 +516,277 @@ private fun WeeklyGoalProgressRow(
 ) {
     val metricType = progress.progress.metricType
     val metricName = stringResource(metricNameResId(metricType))
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            text = metricName,
-            style = MaterialTheme.typography.titleSmall
-        )
-        Text(
-            text = stringResource(
-                R.string.calendar_weekly_goal_value,
-                formatMetricValue(metricType, progress.progress.targetValue)
-            ),
-            style = MaterialTheme.typography.bodySmall
-        )
-        when (progress.availability) {
-            MetricAvailability.AVAILABLE -> {
-                Text(
-                    text = stringResource(
-                        R.string.calendar_weekly_actual_value,
-                        formatMetricValue(metricType, progress.progress.actualValue)
-                    ),
-                    style = MaterialTheme.typography.bodySmall
+    val isAvailable = progress.availability == MetricAvailability.AVAILABLE
+    val isAchieved = isAvailable && progress.progress.achievementRate >= 100.0
+    val statusColors = weeklyProgressStatusColors(
+        availability = progress.availability,
+        isAchieved = isAchieved
+    )
+    val progressFraction = if (isAvailable) {
+        (progress.progress.achievementRate / 100.0).toFloat().coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    val statusLabel = weeklyProgressStatusLabel(
+        availability = progress.availability,
+        isAchieved = isAchieved
+    )
+    val statusIcon = weeklyProgressStatusIcon(
+        availability = progress.availability,
+        isAchieved = isAchieved
+    )
+
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = statusColors.container
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            statusColors.highlight.copy(alpha = 0.18f),
+                            statusColors.container
+                        )
+                    )
                 )
-                Text(
-                    text = stringResource(
-                        R.string.calendar_weekly_rate_value,
-                        progress.progress.achievementRate
-                    ),
-                    style = MaterialTheme.typography.bodySmall
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = metricName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = if (isAchieved) {
+                            stringResource(R.string.calendar_weekly_status_completed_message)
+                        } else {
+                            stringResource(
+                                R.string.calendar_weekly_goal_value,
+                                formatMetricValue(metricType, progress.progress.targetValue)
+                            )
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                WeeklyStatusBadge(
+                    label = statusLabel,
+                    icon = statusIcon,
+                    containerColor = statusColors.badgeContainer,
+                    contentColor = statusColors.badgeContent
                 )
             }
 
-            MetricAvailability.PERMISSION_MISSING -> {
-                Text(
-                    text = stringResource(R.string.calendar_weekly_not_available_permission),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
+            if (isAvailable) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.calendar_weekly_rate_label),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(
+                                R.string.calendar_weekly_rate_value,
+                                progress.progress.achievementRate
+                            ),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = statusColors.emphasis
+                        )
+                    }
+                    if (isAchieved) {
+                        Text(
+                            text = stringResource(R.string.calendar_weekly_status_completed_stamp),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = statusColors.emphasis
+                        )
+                    }
+                }
 
-            MetricAvailability.SOURCE_UNAVAILABLE -> {
+                LinearProgressIndicator(
+                    progress = { progressFraction },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(999.dp)),
+                    color = statusColors.progress,
+                    trackColor = statusColors.track
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    WeeklyMetricValueCard(
+                        label = stringResource(R.string.calendar_weekly_goal_short),
+                        value = formatMetricValue(metricType, progress.progress.targetValue),
+                        modifier = Modifier.weight(1f)
+                    )
+                    WeeklyMetricValueCard(
+                        label = stringResource(R.string.calendar_weekly_actual_short),
+                        value = formatMetricValue(metricType, progress.progress.actualValue),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            } else {
                 Text(
-                    text = stringResource(R.string.calendar_weekly_not_available_source),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
+                    text = when (progress.availability) {
+                        MetricAvailability.PERMISSION_MISSING -> stringResource(R.string.calendar_weekly_not_available_permission)
+                        MetricAvailability.SOURCE_UNAVAILABLE -> stringResource(R.string.calendar_weekly_not_available_source)
+                        MetricAvailability.AVAILABLE -> ""
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = statusColors.emphasis
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun WeeklyStatusBadge(
+    label: String,
+    icon: ImageVector,
+    containerColor: Color,
+    contentColor: Color
+) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = containerColor,
+        contentColor = contentColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeeklyMetricValueCard(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+private data class WeeklyProgressStatusColors(
+    val container: Color,
+    val highlight: Color,
+    val badgeContainer: Color,
+    val badgeContent: Color,
+    val emphasis: Color,
+    val progress: Color,
+    val track: Color
+)
+
+@Composable
+private fun weeklyProgressStatusColors(
+    availability: MetricAvailability,
+    isAchieved: Boolean
+): WeeklyProgressStatusColors {
+    val colorScheme = MaterialTheme.colorScheme
+    return when {
+        availability != MetricAvailability.AVAILABLE -> WeeklyProgressStatusColors(
+            container = colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            highlight = colorScheme.surfaceVariant,
+            badgeContainer = colorScheme.surface,
+            badgeContent = colorScheme.onSurfaceVariant,
+            emphasis = colorScheme.onSurfaceVariant,
+            progress = colorScheme.outline,
+            track = colorScheme.surface
+        )
+        isAchieved -> WeeklyProgressStatusColors(
+            container = colorScheme.primaryContainer.copy(alpha = 0.88f),
+            highlight = colorScheme.primary.copy(alpha = 0.4f),
+            badgeContainer = colorScheme.primary,
+            badgeContent = colorScheme.onPrimary,
+            emphasis = colorScheme.onPrimaryContainer,
+            progress = colorScheme.primary,
+            track = colorScheme.surface.copy(alpha = 0.65f)
+        )
+        else -> WeeklyProgressStatusColors(
+            container = colorScheme.secondaryContainer.copy(alpha = 0.85f),
+            highlight = colorScheme.tertiary.copy(alpha = 0.22f),
+            badgeContainer = colorScheme.surface,
+            badgeContent = colorScheme.onSurface,
+            emphasis = colorScheme.onSecondaryContainer,
+            progress = colorScheme.tertiary,
+            track = colorScheme.surface.copy(alpha = 0.65f)
+        )
+    }
+}
+
+@Composable
+private fun weeklyProgressStatusLabel(
+    availability: MetricAvailability,
+    isAchieved: Boolean
+): String {
+    return when {
+        availability == MetricAvailability.PERMISSION_MISSING -> stringResource(R.string.calendar_weekly_status_locked)
+        availability == MetricAvailability.SOURCE_UNAVAILABLE -> stringResource(R.string.calendar_weekly_status_no_data)
+        isAchieved -> stringResource(R.string.calendar_weekly_status_completed)
+        else -> stringResource(R.string.calendar_weekly_status_in_progress)
+    }
+}
+
+private fun weeklyProgressStatusIcon(
+    availability: MetricAvailability,
+    isAchieved: Boolean
+): ImageVector {
+    return when {
+        availability == MetricAvailability.PERMISSION_MISSING -> Icons.Rounded.Lock
+        availability == MetricAvailability.SOURCE_UNAVAILABLE -> Icons.Rounded.WarningAmber
+        isAchieved -> Icons.Rounded.CheckCircle
+        else -> Icons.Rounded.Timelapse
     }
 }
 

@@ -21,3 +21,4 @@
 | IR-08 | PL+QA | IR-07 | DONE | local | なし | 提出 |
 | CH-2026-03-14 | UI | IR-08 | DONE | local | なし | Health Connect 指標を4項目構成へ整理済み |
 | CH-2026-03-14-PREVIEW | UI | CH-2026-03-14 | DONE | local | なし | WeeklyDashboardCard の単体 Preview を追加済み |
+| CH-2026-03-14-DASHBOARD-UI | UI | CH-2026-03-14-PREVIEW | DONE | local | なし | WeeklyDashboardCard を達成感のある UI に改修済み |

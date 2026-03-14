@@ -200,3 +200,18 @@
   - `./gradlew :app:compileDebugKotlin` 成功。
 - 残課題・次アクション
   - Android Studio の Compose Preview 上でカードの改行量と情報密度を目視確認する。
+
+## CH-2026-03-14-DASHBOARD-UI
+- 変更ファイル一覧
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt`
+  - `app/src/main/res/values/strings.xml`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+- 実施内容（要点）
+  - `WeeklyDashboardCard` の各行を、達成状態がひと目で分かる強調カード UI に変更。
+  - 達成済みは `CLEAR!` 表示と達成バッジ、未達成は進捗バーと大きな達成率、未取得は専用ステータスで見分けられるようにした。
+  - 目標値と実績値を小カード化し、数値の比較がしやすいレイアウトに整理した。
+- 実行したテスト/確認結果
+  - `./gradlew :app:compileDebugKotlin` 成功。
+- 残課題・次アクション
+  - Compose Preview または実機で、達成率 100% 超の表示時にテキスト折り返しや色コントラストが問題ないか確認する。
