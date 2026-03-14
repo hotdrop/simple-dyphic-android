@@ -215,3 +215,23 @@
   - `./gradlew :app:compileDebugKotlin` 成功。
 - 残課題・次アクション
   - Compose Preview または実機で、達成率 100% 超の表示時にテキスト折り返しや色コントラストが問題ないか確認する。
+
+## CH-2026-03-14-WEEKLY-GOAL-MIGRATION
+- 変更ファイル一覧
+  - `app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/WeeklyGoalEntity.kt`
+  - `app/src/main/java/jp/hotdrop/simpledyphic/data/local/RoomGoalLocalDataSource.kt`
+  - `app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/AppDatabase.kt`
+  - `app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/AppDatabaseMigrations.kt`
+  - `app/src/main/java/jp/hotdrop/simpledyphic/di/DatabaseModule.kt`
+  - `app/src/test/java/jp/hotdrop/simpledyphic/data/local/db/AppDatabaseMigrationTest.kt`
+  - `app/src/test/java/jp/hotdrop/simpledyphic/data/local/db/WeeklyGoalEntityTest.kt`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+- 実施内容（要点）
+  - 旧 `FLOORS_CLIMBED` 週次目標が既存 Room DB に残ると `HealthMetricType.valueOf()` で例外になる問題を特定。
+  - Room を v3 に更新し、`MIGRATION_2_3` で旧階段目標レコードを削除する移行処理を追加。
+  - さらに未知の `metricType` が残っていても読み込み全体が落ちないよう、週次目標の復元を `mapNotNull` ベースに防御した。
+- 実行したテスト/確認結果
+  - `./gradlew :app:testDebugUnitTest` 成功。
+- 残課題・次アクション
+  - 既存端末でアプリ更新後に Calendar 画面と「週次目標設定」画面を開き、エラーメッセージが消えることを実機確認する。

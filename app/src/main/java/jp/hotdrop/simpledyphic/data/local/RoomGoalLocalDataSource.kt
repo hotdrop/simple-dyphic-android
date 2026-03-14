@@ -2,7 +2,7 @@ package jp.hotdrop.simpledyphic.data.local
 
 import jp.hotdrop.simpledyphic.data.local.db.WeeklyGoalDao
 import jp.hotdrop.simpledyphic.data.local.db.toEntity
-import jp.hotdrop.simpledyphic.data.local.db.toModel
+import jp.hotdrop.simpledyphic.data.local.db.toModelOrNull
 import jp.hotdrop.simpledyphic.model.WeeklyGoal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -14,12 +14,12 @@ class RoomGoalLocalDataSource @Inject constructor(
     private val weeklyGoalDao: WeeklyGoalDao
 ) {
     suspend fun findAll(): List<WeeklyGoal> {
-        return weeklyGoalDao.findAll().map { it.toModel() }
+        return weeklyGoalDao.findAll().mapNotNull { it.toModelOrNull() }
     }
 
     fun observeAll(): Flow<List<WeeklyGoal>> {
         return weeklyGoalDao.observeAll().map { entities ->
-            entities.map { it.toModel() }
+            entities.mapNotNull { it.toModelOrNull() }
         }
     }
 

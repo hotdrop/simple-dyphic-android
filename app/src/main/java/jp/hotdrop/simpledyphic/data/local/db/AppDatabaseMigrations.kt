@@ -19,4 +19,15 @@ object AppDatabaseMigrations {
             )
         }
     }
+
+    val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                DELETE FROM `weekly_goals`
+                WHERE `metricType` = 'FLOORS_CLIMBED'
+                """.trimIndent()
+            )
+        }
+    }
 }
