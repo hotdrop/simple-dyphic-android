@@ -71,6 +71,7 @@ import jp.hotdrop.simpledyphic.model.ConditionType
 import jp.hotdrop.simpledyphic.model.DyphicId
 import jp.hotdrop.simpledyphic.model.Record
 import jp.hotdrop.simpledyphic.model.WeeklyGoalMetricProgress
+import jp.hotdrop.simpledyphic.model.WeeklyGoalProgress
 import jp.hotdrop.simpledyphic.model.WeeklyMetricInsight
 import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -814,4 +815,98 @@ private fun CalendarScreenPreview() {
             onEditSelectedDate = {}
         )
     }
+}
+
+@Preview(showBackground = true, name = "Weekly Dashboard")
+@Composable
+private fun WeeklyDashboardCardPreview() {
+    WeeklyDashboardCardPreviewContent(
+        uiState = previewWeeklyDashboardUiState()
+    )
+}
+
+@Preview(showBackground = true, name = "Weekly Dashboard Loading")
+@Composable
+private fun WeeklyDashboardCardLoadingPreview() {
+    WeeklyDashboardCardPreviewContent(
+        uiState = previewWeeklyDashboardUiState().copy(
+            isWeeklyLoading = true,
+            weeklyGoalProgresses = emptyList()
+        )
+    )
+}
+
+@Preview(showBackground = true, name = "Weekly Dashboard Error")
+@Composable
+private fun WeeklyDashboardCardErrorPreview() {
+    WeeklyDashboardCardPreviewContent(
+        uiState = previewWeeklyDashboardUiState().copy(
+            weeklyErrorMessageResId = android.R.string.unknownName,
+            weeklyGoalProgresses = emptyList()
+        )
+    )
+}
+
+@Composable
+private fun WeeklyDashboardCardPreviewContent(
+    uiState: CalendarUiState
+) {
+    SimpleDyphicTheme {
+        WeeklyDashboardCard(
+            uiState = uiState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        )
+    }
+}
+
+private fun previewWeeklyDashboardUiState(): CalendarUiState {
+    val selectedDate = LocalDate.of(2026, 2, 7)
+    return CalendarUiState(
+        isLoading = false,
+        currentMonth = YearMonth.from(selectedDate),
+        selectedDate = selectedDate,
+        isWeeklyLoading = false,
+        weeklyStartDate = LocalDate.of(2026, 2, 2),
+        weeklyEndDate = LocalDate.of(2026, 2, 8),
+        weeklyGoalProgresses = listOf(
+            WeeklyGoalMetricProgress(
+                progress = WeeklyGoalProgress(
+                    metricType = HealthMetricType.STEP_COUNT,
+                    targetValue = 56_000.0,
+                    actualValue = 48_320.0,
+                    achievementRate = 86.3
+                ),
+                availability = MetricAvailability.AVAILABLE
+            ),
+            WeeklyGoalMetricProgress(
+                progress = WeeklyGoalProgress(
+                    metricType = HealthMetricType.ACTIVE_KCAL,
+                    targetValue = 2_100.0,
+                    actualValue = 1_980.5,
+                    achievementRate = 94.3
+                ),
+                availability = MetricAvailability.AVAILABLE
+            ),
+            WeeklyGoalMetricProgress(
+                progress = WeeklyGoalProgress(
+                    metricType = HealthMetricType.EXERCISE_MINUTES,
+                    targetValue = 180.0,
+                    actualValue = 0.0,
+                    achievementRate = 0.0
+                ),
+                availability = MetricAvailability.PERMISSION_MISSING
+            ),
+            WeeklyGoalMetricProgress(
+                progress = WeeklyGoalProgress(
+                    metricType = HealthMetricType.DISTANCE_KM,
+                    targetValue = 21.0,
+                    actualValue = 0.0,
+                    achievementRate = 0.0
+                ),
+                availability = MetricAvailability.SOURCE_UNAVAILABLE
+            )
+        )
+    )
 }

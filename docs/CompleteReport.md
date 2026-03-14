@@ -186,3 +186,17 @@
   - `./gradlew :app:compileDebugKotlin` 成功。
 - 残課題・次アクション
   - 必要に応じて実機またはエミュレータで Calendar 画面の表示順と欠落項目を目視確認する。
+
+## CH-2026-03-14-PREVIEW
+- 変更ファイル一覧
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+- 実施内容（要点）
+  - `WeeklyDashboardCard` を単体確認できる Preview を追加。
+  - 通常表示に加えて `Loading` と `Error` の Preview も用意し、状態ごとの差分を確認しやすくした。
+  - Preview 用の `CalendarUiState` サンプルデータを追加し、権限未許可・取得不可の行も再現した。
+- 実行したテスト/確認結果
+  - `./gradlew :app:compileDebugKotlin` 成功。
+- 残課題・次アクション
+  - Android Studio の Compose Preview 上でカードの改行量と情報密度を目視確認する。
