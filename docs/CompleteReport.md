@@ -13,3 +13,19 @@
   - TOML は構文が単純なキー/文字列のみで作成し、目視でフィールド整合性を確認。
 - 残課題・次アクション
   - Codex 上で各 custom agent を実際に呼び出し、期待どおりに責務分離された出力になるかを初回運用で確認する。
+
+# CH-2026-03-20-CODEX-RULE-UPDATE
+- 変更ファイル一覧
+  - `AGENTS.md`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+  - `docs/feedback.md`
+- 実施内容（要点）
+  - `AGENTS.md` に、設計書・ADR・プロポーザルなどの仕様書を `design/` 配下へ集約するルールを追加。
+  - `AGENTS.md` に、タスク完了後は `docs/feedback.md` へフィードバックを書き出し、ルール更新はユーザー承認後に行うフィードバックループを追加。
+  - 今回の作業記録を `ActPlan.md` / `CompleteReport.md` / `feedback.md` に反映。
+- 実行したテスト/確認結果
+  - ドキュメント更新のみのため自動テストは未実施。
+  - `design/` ディレクトリ実在、および更新後の記述整合性を目視確認。
+- 残課題・次アクション
+  - 今後のタスクでは、完了時に `docs/feedback.md` 追記と必要時の承認依頼を標準フローとして運用する。
