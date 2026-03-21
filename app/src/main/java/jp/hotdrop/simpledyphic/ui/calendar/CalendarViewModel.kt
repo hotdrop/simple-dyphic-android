@@ -116,14 +116,15 @@ class CalendarViewModel @Inject constructor(
     private fun observeGoals() {
         observeGoalsJob?.cancel()
         observeGoalsJob = launch {
-            var skipInitialSuccessRefresh = true
+            var isFirstEmission = true
             weeklyGoalObserver.observeWeeklyGoals().collect { result ->
+                val shouldSkipRefresh = isFirstEmission && result is AppResult.Success
+                isFirstEmission = false
+                if (shouldSkipRefresh) {
+                    return@collect
+                }
                 when (result) {
                     is AppResult.Success -> {
-                        if (skipInitialSuccessRefresh) {
-                            skipInitialSuccessRefresh = false
-                            return@collect
-                        }
                         refreshWeeklyData(
                             anchorDate = _uiState.value.selectedDate,
                             includeInsight = false

@@ -52,3 +52,17 @@
   - `./gradlew :app:compileDebugAndroidTestKotlin` 成功
 - 残課題・次アクション
   - `ReviewResult.md` の P3 指摘である `CalendarContent` の eager compose / 一括 state 読みは今回スコープ外のため未対応。必要なら別タスクで Lazy レイアウト化や section 分割を進める。
+
+# CH-2026-03-21-CODEX-CALENDAR-WARNING-FIX
+- 変更ファイル一覧
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarDependencies.kt`
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarViewModel.kt`
+  - `docs/CompleteReport.md`
+- 実施内容（要点）
+  - `CalendarDependencyModule` と `@Binds` メソッドに `@Suppress("unused")` を付与し、Hilt 参照専用定義に対する IDE 未使用警告を解消。
+  - `CalendarViewModel.observeGoals()` の初回成功スキップ判定を整理し、未読代入警告を解消。
+- 実行したテスト/確認結果
+  - `./gradlew :app:compileDebugKotlin` 成功
+  - `./gradlew :app:testDebugUnitTest` 成功
+- 残課題・次アクション
+  - 追加の警告は今回報告された範囲では未確認。

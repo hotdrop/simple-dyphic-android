@@ -56,17 +56,21 @@ class RepositoryCalendarWeeklyDataLoader @Inject constructor(
 
 @Module
 @InstallIn(ViewModelComponent::class)
+@Suppress("unused")
 abstract class CalendarDependencyModule {
+    @Suppress("unused")
     @Binds
     abstract fun bindCalendarRecordObserver(
         impl: RepositoryCalendarRecordObserver
     ): CalendarRecordObserver
 
+    @Suppress("unused")
     @Binds
     abstract fun bindCalendarWeeklyGoalObserver(
         impl: RepositoryCalendarWeeklyGoalObserver
     ): CalendarWeeklyGoalObserver
 
+    @Suppress("unused")
     @Binds
     abstract fun bindCalendarWeeklyDataLoader(
         impl: RepositoryCalendarWeeklyDataLoader
