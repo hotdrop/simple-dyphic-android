@@ -10,7 +10,6 @@
     <string name="calendar_month_format_pattern">yyyy年M月</string>
     <string name="calendar_summary_date_format_pattern">yyyy/MM/dd(E)</string>
     <string name="calendar_summary_empty_prompt">この日の記録は未登録です。\nここをタップして記録しましょう。</string>
-    <string name="calendar_summary_memo_title">【体調メモ】</string>
     <string name="calendar_error_load_records">体調記録の取得に失敗しました。</string>
     <string name="calendar_marker_toilet">&#x1F4A9;</string>
     <string name="calendar_marker_walk">&#x1F6B6;</string>

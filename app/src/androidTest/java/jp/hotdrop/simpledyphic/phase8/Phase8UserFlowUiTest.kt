@@ -84,10 +84,49 @@ class Phase8UserFlowUiTest {
         composeTestRule.onNodeWithTag("record_breakfast_input").performTextInput("Toast")
         composeTestRule.onNodeWithTag("record_save_button").performClick()
 
-        composeTestRule.onNodeWithTag("calendar_edit_selected_date_button").assertExists()
         composeTestRule.runOnIdle {
             assertTrue(isSaved)
             assertEquals("Toast", breakfast)
+        }
+    }
+
+    @Test
+    fun calendarDateSelection_updatesSelectedDateBeforeEdit() {
+        val initialDate = LocalDate.of(2026, 2, 7)
+        val targetDate = LocalDate.of(2026, 2, 9)
+        var uiState by mutableStateOf(
+            CalendarUiState(
+                isLoading = false,
+                calendarStartMonth = YearMonth.of(2025, 1),
+                calendarEndMonth = YearMonth.of(2027, 12),
+                currentMonth = YearMonth.of(2026, 2),
+                selectedDate = initialDate
+            )
+        )
+        var editedDate: LocalDate? = null
+
+        composeTestRule.setContent {
+            SimpleDyphicTheme {
+                CalendarScreen(
+                    uiState = uiState,
+                    onRetry = {},
+                    onMonthChanged = {},
+                    onDateTap = { tappedDate ->
+                        uiState = uiState.copy(selectedDate = tappedDate)
+                    },
+                    onEditSelectedDate = {
+                        editedDate = uiState.selectedDate
+                    }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("calendar_day_$targetDate").performClick()
+        composeTestRule.onNodeWithTag("calendar_edit_selected_date_button").performClick()
+
+        composeTestRule.runOnIdle {
+            assertEquals(targetDate, uiState.selectedDate)
+            assertEquals(targetDate, editedDate)
         }
     }
 
