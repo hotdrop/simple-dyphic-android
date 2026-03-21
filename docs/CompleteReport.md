@@ -29,3 +29,26 @@
   - `design/` ディレクトリ実在、および更新後の記述整合性を目視確認。
 - 残課題・次アクション
   - 今後のタスクでは、完了時に `docs/feedback.md` 追記と必要時の承認依頼を標準フローとして運用する。
+
+# CH-2026-03-21-CODEX-CALENDAR-REVIEW-FIX
+- 変更ファイル一覧
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarDependencies.kt`
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt`
+  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarViewModel.kt`
+  - `app/src/test/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarViewModelTest.kt`
+  - `app/src/test/java/jp/hotdrop/simpledyphic/ui/calendar/MainDispatcherRule.kt`
+  - `app/src/androidTest/java/jp/hotdrop/simpledyphic/phase8/Phase8UserFlowUiTest.kt`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+  - `docs/feedback.md`
+- 実施内容（要点）
+  - `CalendarViewModel` の週次ロード責務を分離し、`onRetry()` で週次目標監視を再購読するよう修正。
+  - 週次目標監視の初回成功では再ロードをスキップし、初期二重ロードと goal 変更時の insight 再計算を抑止。
+  - 週次ロード失敗時に `weeklyStartDate` / `weeklyEndDate` / `weeklyGoalProgresses` / `weeklyInsights` / `hasBadConditionDaysInWeek` をクリアするよう統一。
+  - `CalendarScreen` に `calendar_edit_selected_date_button` と日セル test tag を付与し、既存 UI テストの破損を修正。
+  - `CalendarViewModelTest` で初期二重ロード抑止・retry 後の監視復旧・stale state クリアを追加し、`Phase8UserFlowUiTest` で日付選択導線を追加。
+- 実行したテスト/確認結果
+  - `./gradlew :app:testDebugUnitTest` 成功
+  - `./gradlew :app:compileDebugAndroidTestKotlin` 成功
+- 残課題・次アクション
+  - `ReviewResult.md` の P3 指摘である `CalendarContent` の eager compose / 一括 state 読みは今回スコープ外のため未対応。必要なら別タスクで Lazy レイアウト化や section 分割を進める。

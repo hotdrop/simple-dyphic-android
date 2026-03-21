@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -283,8 +284,7 @@ private fun CalendarContent(
         }
 
         SummaryCard(
-            selectedDate = uiState.selectedDate,
-            record = uiState.selectedRecord,
+            uiState = uiState,
             onEditSelectedDate = onEditSelectedDate,
             modifier = Modifier
                 .fillMaxWidth()
@@ -292,13 +292,6 @@ private fun CalendarContent(
         )
 
         WeeklyDashboardCard(
-            uiState = uiState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        )
-
-        WeeklyInsightCard(
             uiState = uiState,
             modifier = Modifier
                 .fillMaxWidth()
@@ -335,6 +328,13 @@ private fun DayCell(
         modifier = Modifier
             .aspectRatio(1f)
             .padding(2.dp)
+            .then(
+                if (isCurrentMonth) {
+                    Modifier.testTag("calendar_day_${day.date}")
+                } else {
+                    Modifier
+                }
+            )
             .semantics { this.selected = isSelected }
             .let { base ->
                 if (isCurrentMonth) {
@@ -791,57 +791,6 @@ private fun weeklyProgressStatusIcon(
 }
 
 @Composable
-private fun WeeklyInsightCard(
-    uiState: CalendarUiState,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.calendar_weekly_insight_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-            when {
-                uiState.isWeeklyLoading -> {
-                    Text(text = stringResource(R.string.calendar_weekly_loading))
-                }
-
-                uiState.weeklyErrorMessageResId != null -> {
-                    Text(
-                        text = stringResource(uiState.weeklyErrorMessageResId),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
-                !uiState.hasBadConditionDaysInWeek -> {
-                    Text(
-                        text = stringResource(R.string.calendar_weekly_insight_empty),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                else -> {
-                    uiState.weeklyInsights.forEachIndexed { index, insight ->
-                        if (index > 0) {
-                            HorizontalDivider()
-                        }
-                        WeeklyInsightRow(insight = insight)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun WeeklyInsightRow(insight: WeeklyMetricInsight) {
     val metricType = insight.metricType
     val prevText = insight.deltaFromPreviousWeek?.let {
@@ -949,8 +898,7 @@ private fun metricNameResId(metricType: HealthMetricType): Int {
 
 @Composable
 private fun SummaryCard(
-    selectedDate: LocalDate,
-    record: Record?,
+    uiState: CalendarUiState,
     onEditSelectedDate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -962,6 +910,7 @@ private fun SummaryCard(
 
     Card(
         modifier = modifier
+            .testTag("calendar_edit_selected_date_button")
             .clickable(onClick = onEditSelectedDate),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -975,38 +924,65 @@ private fun SummaryCard(
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = selectedDate.format(summaryDateFormatter),
+                text = uiState.selectedDate.format(summaryDateFormatter),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
             HorizontalDivider()
-            if (record == null) {
+            if (uiState.selectedRecord == null) {
                 Text(
                     text = stringResource(R.string.calendar_summary_empty_prompt),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                val memo = record.conditionMemo.orEmpty()
+                val memo = uiState.selectedRecord?.conditionMemo.orEmpty()
                 if (memo.isNotBlank()) {
-                    Text(
-                        text = stringResource(R.string.calendar_summary_memo_title),
-                        style = MaterialTheme.typography.titleSmall
-                    )
                     Text(
                         text = memo,
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 10,
                         overflow = TextOverflow.Ellipsis
                     )
-                } else {
-                    Text(
-                        text = stringResource(R.string.calendar_summary_empty_prompt),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
+                Text(
+                    text = stringResource(R.string.calendar_weekly_insight_title),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                WeeklyInsightCard(uiState = uiState)
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeeklyInsightCard(
+    uiState: CalendarUiState
+) {
+    when {
+        uiState.isWeeklyLoading -> {
+            Text(text = stringResource(R.string.calendar_weekly_loading))
+        }
+        uiState.weeklyErrorMessageResId != null -> {
+            Text(
+                text = stringResource(uiState.weeklyErrorMessageResId),
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+        !uiState.hasBadConditionDaysInWeek -> {
+            Text(
+                text = stringResource(R.string.calendar_weekly_insight_empty),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        else -> {
+            uiState.weeklyInsights.forEachIndexed { index, insight ->
+                if (index > 0) {
+                    HorizontalDivider()
+                }
+                WeeklyInsightRow(insight = insight)
             }
         }
     }
