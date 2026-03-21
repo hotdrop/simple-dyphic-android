@@ -66,3 +66,19 @@
   - `./gradlew :app:testDebugUnitTest` 成功
 - 残課題・次アクション
   - 追加の警告は今回報告された範囲では未確認。
+
+# CH-2026-03-21-CODEX-FEEDBACK-RULE-UPDATE
+- 変更ファイル一覧
+  - `AGENTS.md`
+  - `docs/ActPlan.md`
+  - `docs/CompleteReport.md`
+  - `docs/feedback.md`
+- 実施内容（要点）
+  - `feedback.md` の振り返りから、`ActPlan.md` の更新単位をタスク単位とするルールを `AGENTS.md` に追記。
+  - `CompleteReport.md` のテスト/確認結果について、compile のみ・unit test・androidTest compile なども明記可とする報告粒度ルールを追加。
+  - `docs/feedback.md` の追記形式として、追記のみ・日付付き導入・最低限含める項目を `AGENTS.md` に明文化。
+- 実行したテスト/確認結果
+  - ドキュメント更新のみのため自動テストは未実施。
+  - `AGENTS.md` の追記内容と `docs/feedback.md` の既存記述が整合することを目視確認。
+- 残課題・次アクション
+  - 今後 `docs/feedback.md` 追記時に、新ルールどおりの見出し/項目構成へ自然に収束するか運用で確認する。
