@@ -1,0 +1,125 @@
+# LiteRT-LM / Gemma 4 AIアドバイス機能 実装計画書
+
+## Summary
+- BottomNavigation に `AI` タブを追加し、`カレンダー` と `設定` の間に配置する。
+- AI 画面では `週間 / 月間 / 3ヶ月` の3期間を切り替え、Health Connect の `歩数 / 活動消費kcal / 運動時間 / 移動距離` と、記録済み `Ring Fit kcal / km` を集計表示したうえで、手動実行でローカル LLM からアドバイスを生成する。
+- 設定配下に `AIアドバイス設定` 画面を追加し、`生年月日 / 身長 / 体重 / Gemma 4モデルファイル / アドバイス指示文` を管理する。
+- LiteRT-LM はアプリ内コンポーネントとして扱い、Hilt 管理の単一実行層から利用する。応答は毎回単発生成、会話は使い捨て、表示はストリーミングとする。
+- 目標判定は既存の週間目標を期間比で拡張して使い、達成時は強く称賛する文面を既定プロンプトで誘導する。
+
+## Implementation Changes
+- ナビゲーション
+  - top-level に `ai` を追加し、`calendar / ai / settings` の3タブ構成にする。
+  - settings 配下に `settings/ai-advice` を追加し、設定一覧から遷移できるようにする。
+- データ保存
+  - Room に `app_settings` テーブルを追加し、単一レコード ID 固定で `birthDate`, `heightCm`, `weightKg`, `advisorPrompt`, `modelFilePath`, `modelDisplayName` を保持する。
+  - DB version を `4` に上げ、`3 -> 4` Migration で `app_settings` を新規作成する。既存 `records` と `weekly_goals` は無変更とする。
+  - `AppSettings` モデル、DAO、LocalDataSource、Repository を追加し、設定画面と AI 画面の両方から参照できるようにする。
+- 設定画面
+  - 既存 Settings に `AIアドバイス設定` の ListItem を追加する。
+  - 専用画面では以下を編集可能にする。
+  - 生年月日: 日付選択 UI で保存。内部保存は `LocalDate` 相当の ISO 文字列とする。
+  - 身長/体重: 数値入力。負値と空文字は未設定扱いとし、保存時に検証する。
+  - モデル: `.litertlm` のみ選択対象とする。選択後はアプリ内ファイルへコピーし、その絶対パスを保存する。
+  - プロンプト: ユーザーが編集できるのは指示文のみ。数値データブロックは固定テンプレートでアプリ側生成とする。
+  - 画面は Route/Screen 分離、Preview は `通常 / 保存中 / エラー / 未設定` を揃える。
+- Health Connect / Record 集計
+  - `HealthConnectRepository` に `requiredPermissions(metricTypes)` と `hasPermissions(metricTypes)` を追加する。
+  - `RecordEdit` は現行どおり `歩数 + 活動消費kcal` の最小権限を使用し、AI 画面は `STEP_COUNT / ACTIVE_KCAL / EXERCISE_MINUTES / DISTANCE_KM` の4指標一括権限を要求する。
+  - `RecordRepository` に日付範囲取得 API を追加し、期間内の `ringfitKcal` と `ringfitKm` を合算できるようにする。
+  - availability は既存方針を維持し、`0` と `未取得` を混同しない。
+- AI ドメイン
+  - 追加型: `AdvicePeriod`, `ExerciseAdviceInput`, `ExerciseMetricSummary`, `ExerciseAdviceResult`, `ExerciseAdviceUiState`
+  - 追加 UseCase: `GenerateExerciseAdviceUseCase`
+  - UseCase の処理順は固定する。
+  - 1. 設定必須項目の検証
+  - 2. 対象期間の確定
+  - 3. Health Connect の期間取得
+  - 4. Ring Fit の期間集計
+  - 5. 既存週間目標の期間スケーリング
+  - 6. プロンプト用固定データブロック生成
+  - 7. LiteRT-LM 実行
+  - 対象期間の定義は固定とする。
+  - 週間: 当週月曜から今日まで
+  - 月間: 当月初日から今日まで
+  - 3ヶ月: 2ヶ月前の月初から今日まで
+  - 目標スケーリングは `週間目標 * 経過日数 / 7.0` を基本とし、対象指標は Health Connect 系目標のみとする。Ring Fit は達成判定に使わず、補足材料としてのみプロンプトへ渡す。
+  - 年齢は `生年月日 -> 今日時点の満年齢` で算出し、プロンプトに含める。
+- LiteRT-LM 実行層
+  - Hilt 管理の singleton を追加し、モデル初回利用時に遅延初期化する。
+  - 初期化は `GPU` を先に試し、失敗時に `CPU` へフォールバックする。
+  - `Engine` はモデルパス単位で保持し、保存済み `modelFilePath` が変わったら旧 Engine を破棄して再初期化する。
+  - 会話は毎回 `ConversationConfig(systemInstruction=固定テンプレート, samplerConfig=固定値)` で生成し、1リクエストごとに close する。
+  - 実行中は同時生成を禁止し、期間変更や再生成時は進行中 Job を cancel して最新要求のみ反映する。
+  - エラーは `モデル未設定 / モデル読込失敗 / 権限不足 / データ不足 / 推論失敗` を分けて UI 状態へ反映する。
+- AI 画面 UI
+  - Route で `collectAsStateWithLifecycle()` と権限リクエスト、Screen で描画のみを行う。
+  - 表示状態は `未設定 / 権限不足 / 集計表示 / モデル初期化中 / 生成中 / 生成成功 / 生成失敗` を明示する。
+  - 生成前でも数値サマリーを表示する。
+  - 期間切替 UI、設定画面への導線、生成ボタン、再生成ボタン、ストリーミング応答表示、エラー表示を持つ。
+  - 既定プロンプトは次の性質を必ず含む。
+  - 医療断定を避ける
+  - 運動アドバイザーのようなラフな口調
+  - 目標達成時はかなり褒める
+  - 未達時も前向きに背中を押す
+  - 数値説明の羅列で終わらせない
+- 実装順序
+  - 1. Room と Repository 追加
+  - 2. Settings 画面拡張
+  - 3. AI ドメイン / UseCase / LiteRT-LM 実行層
+  - 4. AI 画面と Navigation 追加
+  - 5. 文字列 / Preview / テスト整備
+  - 6. 検証と `CompleteReport.md` / `feedback.md` 追記
+
+## Public APIs / Types
+- 追加 Model / State
+  - `AppSettings`
+  - `AdvicePeriod`
+  - `ExerciseMetricSummary`
+  - `ExerciseAdviceInput`
+  - `ExerciseAdviceResult`
+  - `ExerciseAdviceUiState`
+- 追加 Repository API
+  - `RecordRepository.findByDateRange(start, end)`
+  - `HealthConnectRepository.requiredPermissions(metricTypes)`
+  - `HealthConnectRepository.hasPermissions(metricTypes)`
+  - `AppSettingsRepository.observe()` / `get()` / `save(...)`
+- 追加 UseCase
+  - `GenerateExerciseAdviceUseCase`
+- 追加 Navigation
+  - top-level `ai`
+  - settings child `settings/ai-advice`
+
+## Test Plan
+- Room
+  - `AppDatabaseMigrationTest` に `3 -> 4` を追加し、`app_settings` 作成と既存テーブル維持を確認する。
+  - `AppSettings` DAO の保存・再取得・上書き保存を unit test で確認する。
+- ドメイン / Repository
+  - `GenerateExerciseAdviceUseCase` で `週間 / 月間 / 3ヶ月` の期間解決を検証する。
+  - 週間目標の期間スケーリング結果を検証する。
+  - Health Connect availability が `AVAILABLE / PERMISSION_MISSING / SOURCE_UNAVAILABLE` のまま上位へ渡ることを検証する。
+  - Ring Fit 集計が指定期間の合算になることを検証する。
+  - 設定未入力時に適切な失敗状態を返すことを検証する。
+  - プロンプト構築でプロフィール、目標達成状況、Health Connect 指標、Ring Fit 指標が含まれることを検証する。
+- UI
+  - Compose UI Test で BottomNavigation の `AI` タブ追加を確認する。
+  - Settings から `AIアドバイス設定` 導線を確認する。
+  - AI 画面で未設定時に生成不可メッセージと設定導線が出ることを確認する。
+  - 期間切替で表示ラベルが変わることを確認する。
+  - 生成中表示、生成後表示、権限不足表示を確認する。
+- Preview
+  - AI 画面: `通常 / 未設定 / 権限不足 / 初期化中 / 生成中 / エラー / 成功`
+  - AI設定画面: `通常 / 未設定 / 保存中 / エラー`
+- 実機・ビルド確認
+  - `:app:compileDebugKotlin`
+  - `:app:testDebugUnitTest`
+  - 必要なら `:app:compileDebugAndroidTestKotlin`
+  - 実機またはエミュレータで `モデル選択 -> 保存 -> AI生成 -> 期間切替` の主要導線を手動確認する。
+
+## Assumptions
+- モデルはユーザーが別途取得した `.litertlm` を設定画面から選択する前提とし、アプリ同梱や固定パス運用は行わない。
+- プロンプトは全文自由編集ではなく、指示文のみ編集可能とする。
+- AI 生成は手動実行のみとし、AI 画面表示時の自動生成は行わない。
+- 達成判定は既存の Health Connect 系週間目標のみを期間比で拡張して用い、Ring Fit 値は判定対象外とする。
+- 生年月日・身長・体重・モデル未設定時は生成を開始せず、設定導線を優先表示する。
+- `docs/ActPlan.md` はこの計画内容をそのまま採用する前提とし、進捗ログや完了ログは記載しない。
