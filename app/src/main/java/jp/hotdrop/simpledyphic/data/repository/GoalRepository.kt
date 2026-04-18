@@ -14,11 +14,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class GoalRepository @Inject constructor(
+open class GoalRepository @Inject constructor(
     private val localDataSource: RoomGoalLocalDataSource
 ) {
 
-    fun observeWeeklyGoals(): Flow<AppResult<List<WeeklyGoal>>> {
+    open fun observeWeeklyGoals(): Flow<AppResult<List<WeeklyGoal>>> {
         return localDataSource.observeAll()
             .map { storedGoals ->
                 AppResult.Success(mergeWithDefaults(storedGoals)) as AppResult<List<WeeklyGoal>>
@@ -26,13 +26,13 @@ class GoalRepository @Inject constructor(
             .catch { error -> emit(AppResult.Failure(error)) }
     }
 
-    suspend fun getWeeklyGoals(): AppResult<List<WeeklyGoal>> {
+    open suspend fun getWeeklyGoals(): AppResult<List<WeeklyGoal>> {
         return appResultSuspend {
             mergeWithDefaults(localDataSource.findAll())
         }
     }
 
-    suspend fun saveWeeklyGoal(goal: WeeklyGoal): AppCompletable {
+    open suspend fun saveWeeklyGoal(goal: WeeklyGoal): AppCompletable {
         return appCompletableSuspend {
             localDataSource.save(goal)
         }

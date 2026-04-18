@@ -20,6 +20,9 @@ class RoomRecordLocalDataSource @Inject constructor(
 
     suspend fun findAll(): List<Record> = recordDao.findAll().map { it.toModel() }
 
+    suspend fun findBetween(startId: Int, endId: Int): List<Record> =
+        recordDao.findBetween(startId, endId).map { it.toModel() }
+
     fun observeAll(): Flow<List<Record>> {
         return recordDao.observeAll().map { entities ->
             entities.map { entity -> entity.toModel() }

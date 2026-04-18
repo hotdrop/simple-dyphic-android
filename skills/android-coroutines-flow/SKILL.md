@@ -23,7 +23,6 @@ description: このアプリの Kotlin Coroutines/Flow 実装スキル。ViewMod
 - 共有状態更新は `_uiState.update` に寄せて一貫性を保つ。
 
 ## テストルール
-- `runTest` を使って ViewModel の非同期状態遷移を検証する。
 - 成功・失敗・キャンセルの分岐を少なくとも1つずつテストする。
 - Flow の初期値、更新値、エラー値の遷移を検証する。
 

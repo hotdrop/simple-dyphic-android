@@ -18,6 +18,9 @@ interface RecordDao {
     @Query("SELECT * FROM records ORDER BY id ASC")
     fun observeAll(): Flow<List<RecordEntity>>
 
+    @Query("SELECT * FROM records WHERE id BETWEEN :startId AND :endId ORDER BY id ASC")
+    suspend fun findBetween(startId: Int, endId: Int): List<RecordEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(record: RecordEntity)
 

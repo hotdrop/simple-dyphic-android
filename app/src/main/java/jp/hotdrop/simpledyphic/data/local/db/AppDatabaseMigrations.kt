@@ -30,4 +30,23 @@ object AppDatabaseMigrations {
             )
         }
     }
+
+    val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `app_settings` (
+                    `id` INTEGER NOT NULL,
+                    `birthDate` TEXT,
+                    `heightCm` REAL,
+                    `weightKg` REAL,
+                    `advisorPrompt` TEXT NOT NULL,
+                    `modelFilePath` TEXT,
+                    `modelDisplayName` TEXT,
+                    PRIMARY KEY(`id`)
+                )
+                """.trimIndent()
+            )
+        }
+    }
 }

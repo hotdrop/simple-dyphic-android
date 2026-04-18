@@ -2,6 +2,7 @@ package jp.hotdrop.simpledyphic.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
@@ -23,9 +24,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import jp.hotdrop.simpledyphic.R
+import jp.hotdrop.simpledyphic.ui.ai.ExerciseAdviceRoute
 import jp.hotdrop.simpledyphic.ui.calendar.CalendarRoute
 import jp.hotdrop.simpledyphic.ui.record.RecordEditRoute
 import jp.hotdrop.simpledyphic.ui.record.RecordEditViewModel
+import jp.hotdrop.simpledyphic.ui.settings.AiAdviceSettingsRoute
 import jp.hotdrop.simpledyphic.ui.settings.SettingsRoute
 import jp.hotdrop.simpledyphic.ui.settings.WeeklyGoalSettingsRoute
 
@@ -36,6 +39,7 @@ fun MainNavigation() {
     val currentDestination = backStackEntry?.destination
     val destinations = listOf(
         TopLevelDestination.Calendar,
+        TopLevelDestination.Ai,
         TopLevelDestination.Settings
     )
 
@@ -85,11 +89,22 @@ fun MainNavigation() {
             }
             composable(TopLevelDestination.Settings.route) {
                 SettingsRoute(
-                    onNavigateToWeeklyGoals = { navController.navigate(WeeklyGoalSettingsDestination.route) }
+                    onNavigateToWeeklyGoals = { navController.navigate(WeeklyGoalSettingsDestination.route) },
+                    onNavigateToAiAdviceSettings = { navController.navigate(AiAdviceSettingsDestination.route) }
+                )
+            }
+            composable(TopLevelDestination.Ai.route) {
+                ExerciseAdviceRoute(
+                    onOpenSettings = { navController.navigate(AiAdviceSettingsDestination.route) }
                 )
             }
             composable(WeeklyGoalSettingsDestination.route) {
                 WeeklyGoalSettingsRoute(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(AiAdviceSettingsDestination.route) {
+                AiAdviceSettingsRoute(
                     onBack = { navController.popBackStack() }
                 )
             }
@@ -118,7 +133,9 @@ private fun isTopLevelDestinationInHierarchy(navDestination: NavDestination?, ro
 
 private fun isTopLevelDestination(navDestination: NavDestination?): Boolean {
     val route = navDestination?.route ?: return false
-    return route == TopLevelDestination.Calendar.route || route == TopLevelDestination.Settings.route
+    return route == TopLevelDestination.Calendar.route ||
+        route == TopLevelDestination.Ai.route ||
+        route == TopLevelDestination.Settings.route
 }
 
 private sealed class TopLevelDestination(
@@ -132,6 +149,12 @@ private sealed class TopLevelDestination(
         icon = { Icon(imageVector = Icons.Outlined.CalendarMonth, contentDescription = null) }
     )
 
+    data object Ai : TopLevelDestination(
+        route = "ai",
+        labelResId = R.string.tab_ai,
+        icon = { Icon(imageVector = Icons.Outlined.AutoAwesome, contentDescription = null) }
+    )
+
     data object Settings : TopLevelDestination(
         route = "settings",
         labelResId = R.string.tab_settings,
@@ -141,4 +164,8 @@ private sealed class TopLevelDestination(
 
 private object WeeklyGoalSettingsDestination {
     const val route: String = "settings/weekly-goals"
+}
+
+private object AiAdviceSettingsDestination {
+    const val route: String = "settings/ai-advice"
 }

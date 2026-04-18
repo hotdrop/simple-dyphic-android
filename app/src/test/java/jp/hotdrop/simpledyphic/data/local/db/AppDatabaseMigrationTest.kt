@@ -50,7 +50,8 @@ class AppDatabaseMigrationTest {
         val migratedDb = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
             .addMigrations(
                 AppDatabaseMigrations.MIGRATION_1_2,
-                AppDatabaseMigrations.MIGRATION_2_3
+                AppDatabaseMigrations.MIGRATION_2_3,
+                AppDatabaseMigrations.MIGRATION_3_4
             )
             .allowMainThreadQueries()
             .build()
@@ -62,6 +63,33 @@ class AppDatabaseMigrationTest {
         ).use { cursor ->
             assertTrue(cursor.moveToFirst())
             assertEquals(0, cursor.getInt(0))
+        }
+
+        migratedDb.close()
+        File(context.getDatabasePath(dbName).absolutePath).delete()
+    }
+
+    @Test
+    fun migrate3To4_createsAppSettingsTable() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val dbName = "migration-test-${System.currentTimeMillis()}.db"
+
+        createVersion3Database(context, dbName)
+
+        val migratedDb = Room.databaseBuilder(context, AppDatabase::class.java, dbName)
+            .addMigrations(
+                AppDatabaseMigrations.MIGRATION_1_2,
+                AppDatabaseMigrations.MIGRATION_2_3,
+                AppDatabaseMigrations.MIGRATION_3_4
+            )
+            .allowMainThreadQueries()
+            .build()
+
+        migratedDb.openHelper.writableDatabase.query(
+            SimpleSQLiteQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='app_settings'")
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("app_settings", cursor.getString(0))
         }
 
         migratedDb.close()
@@ -95,6 +123,13 @@ class AppDatabaseMigrationTest {
         db.close()
     }
 
+    private fun createVersion3Database(context: Context, dbName: String) {
+        val db = Room.databaseBuilder(context, V3AppDatabase::class.java, dbName)
+            .allowMainThreadQueries()
+            .build()
+        db.close()
+    }
+
     @Database(
         entities = [RecordEntity::class],
         version = 1,
@@ -108,4 +143,11 @@ class AppDatabaseMigrationTest {
         exportSchema = false
     )
     abstract class V2AppDatabase : RoomDatabase()
+
+    @Database(
+        entities = [RecordEntity::class, WeeklyGoalEntity::class],
+        version = 3,
+        exportSchema = false
+    )
+    abstract class V3AppDatabase : RoomDatabase()
 }

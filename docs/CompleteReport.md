@@ -1,84 +1,99 @@
-# CH-2026-03-20-CODEX-AGENTS
-- 変更ファイル一覧
-  - `.codex/agents/pr_explorer.toml`
-  - `.codex/agents/reviewer.toml`
-  - `.codex/agents/performance_reviewer.toml`
-  - `docs/ActPlan.md`
-  - `docs/CompleteReport.md`
-- 実施内容（要点）
-  - `.codex/agents/` を新設し、並列コードレビュー向けの custom agents を3種追加。
-  - `pr_explorer` はコードフロー把握専用、`reviewer` はバグ・セキュリティ・テスト不足専用、`performance_reviewer` は性能観点専用として責務を明文化。
-  - 各 agent に「扱う観点」と「扱わない観点」を明示し、役割の越境を防ぐプロンプト構成にした。
-- 実行したテスト/確認結果
-  - TOML は構文が単純なキー/文字列のみで作成し、目視でフィールド整合性を確認。
-- 残課題・次アクション
-  - Codex 上で各 custom agent を実際に呼び出し、期待どおりに責務分離された出力になるかを初回運用で確認する。
+# 2026-04-12 LiteRT-LM / Gemma 4 AIアドバイス機能
 
-# CH-2026-03-20-CODEX-RULE-UPDATE
-- 変更ファイル一覧
-  - `AGENTS.md`
-  - `docs/ActPlan.md`
-  - `docs/CompleteReport.md`
-  - `docs/feedback.md`
-- 実施内容（要点）
-  - `AGENTS.md` に、設計書・ADR・プロポーザルなどの仕様書を `design/` 配下へ集約するルールを追加。
-  - `AGENTS.md` に、タスク完了後は `docs/feedback.md` へフィードバックを書き出し、ルール更新はユーザー承認後に行うフィードバックループを追加。
-  - 今回の作業記録を `ActPlan.md` / `CompleteReport.md` / `feedback.md` に反映。
-- 実行したテスト/確認結果
-  - ドキュメント更新のみのため自動テストは未実施。
-  - `design/` ディレクトリ実在、および更新後の記述整合性を目視確認。
-- 残課題・次アクション
-  - 今後のタスクでは、完了時に `docs/feedback.md` 追記と必要時の承認依頼を標準フローとして運用する。
+## 1. 変更ファイル一覧
+- `app/build.gradle.kts`
+- `app/src/androidTest/java/jp/hotdrop/simpledyphic/phase8/Phase8UserFlowUiTest.kt`
+- `app/src/main/AndroidManifest.xml`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/ai/LiteRtLmAdviceClient.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/local/AppSettingsLocalDataSource.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/local/RoomRecordLocalDataSource.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/AppDatabase.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/AppDatabaseMigrations.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/AppSettingsDao.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/AppSettingsEntity.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/local/db/RecordDao.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/repository/AppSettingsRepository.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/repository/GoalRepository.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/repository/HealthConnectRepository.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/data/repository/RecordRepository.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/di/DatabaseModule.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/domain/usecase/ExerciseAdviceInputBuilder.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/domain/usecase/GenerateExerciseAdviceUseCase.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/model/AdvicePeriod.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/model/AppSettings.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/model/ExerciseAdviceInput.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/model/ExerciseAdviceRequirement.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/model/ExerciseAdviceResult.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/model/ExerciseMetricKind.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/model/ExerciseMetricSummary.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/MainNavigation.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/ai/ExerciseAdviceScreen.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/ai/ExerciseAdviceUiState.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/ai/ExerciseAdviceViewModel.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/AiAdviceSettingsScreen.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/AiAdviceSettingsUiState.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/AiAdviceSettingsViewModel.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/SettingsScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/java/jp/hotdrop/simpledyphic/data/local/db/AppDatabaseMigrationTest.kt`
+- `app/src/test/java/jp/hotdrop/simpledyphic/data/local/db/AppSettingsDaoTest.kt`
+- `app/src/test/java/jp/hotdrop/simpledyphic/domain/usecase/ExerciseAdviceInputBuilderTest.kt`
+- `gradle/libs.versions.toml`
 
-# CH-2026-03-21-CODEX-CALENDAR-REVIEW-FIX
-- 変更ファイル一覧
-  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarDependencies.kt`
-  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarScreen.kt`
-  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarViewModel.kt`
-  - `app/src/test/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarViewModelTest.kt`
-  - `app/src/test/java/jp/hotdrop/simpledyphic/ui/calendar/MainDispatcherRule.kt`
-  - `app/src/androidTest/java/jp/hotdrop/simpledyphic/phase8/Phase8UserFlowUiTest.kt`
-  - `docs/ActPlan.md`
-  - `docs/CompleteReport.md`
-  - `docs/feedback.md`
-- 実施内容（要点）
-  - `CalendarViewModel` の週次ロード責務を分離し、`onRetry()` で週次目標監視を再購読するよう修正。
-  - 週次目標監視の初回成功では再ロードをスキップし、初期二重ロードと goal 変更時の insight 再計算を抑止。
-  - 週次ロード失敗時に `weeklyStartDate` / `weeklyEndDate` / `weeklyGoalProgresses` / `weeklyInsights` / `hasBadConditionDaysInWeek` をクリアするよう統一。
-  - `CalendarScreen` に `calendar_edit_selected_date_button` と日セル test tag を付与し、既存 UI テストの破損を修正。
-  - `CalendarViewModelTest` で初期二重ロード抑止・retry 後の監視復旧・stale state クリアを追加し、`Phase8UserFlowUiTest` で日付選択導線を追加。
-- 実行したテスト/確認結果
-  - `./gradlew :app:testDebugUnitTest` 成功
-  - `./gradlew :app:compileDebugAndroidTestKotlin` 成功
-- 残課題・次アクション
-  - `ReviewResult.md` の P3 指摘である `CalendarContent` の eager compose / 一括 state 読みは今回スコープ外のため未対応。必要なら別タスクで Lazy レイアウト化や section 分割を進める。
+## 2. 実施内容
+- BottomNavigation に `AI` タブを追加し、AI 画面と AI アドバイス設定画面を新設した。
+- Room に `app_settings` テーブルと migration を追加し、生年月日・身長・体重・Gemma 4 モデル・指示文を保存できるようにした。
+- LiteRT-LM の Android 依存を追加し、Gemma 4 の単発ストリーミング推論を行う `LiteRtLmAdviceClient` を追加した。
+- Health Connect の複数指標権限確認 API、Record の日付範囲取得 API、AI 用の期間集計・プロンプト組み立て UseCase を追加した。
+- 新規 DAO / UseCase / Compose UI 導線向けの unit test と androidTest compile 対応を追加した。
 
-# CH-2026-03-21-CODEX-CALENDAR-WARNING-FIX
-- 変更ファイル一覧
-  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarDependencies.kt`
-  - `app/src/main/java/jp/hotdrop/simpledyphic/ui/calendar/CalendarViewModel.kt`
-  - `docs/CompleteReport.md`
-- 実施内容（要点）
-  - `CalendarDependencyModule` と `@Binds` メソッドに `@Suppress("unused")` を付与し、Hilt 参照専用定義に対する IDE 未使用警告を解消。
-  - `CalendarViewModel.observeGoals()` の初回成功スキップ判定を整理し、未読代入警告を解消。
-- 実行したテスト/確認結果
-  - `./gradlew :app:compileDebugKotlin` 成功
-  - `./gradlew :app:testDebugUnitTest` 成功
-- 残課題・次アクション
-  - 追加の警告は今回報告された範囲では未確認。
+## 3. 実行したテスト/確認結果
+- `./gradlew :app:compileDebugKotlin`
+  - 成功
+- `./gradlew :app:testDebugUnitTest :app:compileDebugAndroidTestKotlin`
+  - 成功
 
-# CH-2026-03-21-CODEX-FEEDBACK-RULE-UPDATE
-- 変更ファイル一覧
-  - `AGENTS.md`
-  - `docs/ActPlan.md`
-  - `docs/CompleteReport.md`
-  - `docs/feedback.md`
-- 実施内容（要点）
-  - `feedback.md` の振り返りから、`ActPlan.md` の更新単位をタスク単位とするルールを `AGENTS.md` に追記。
-  - `CompleteReport.md` のテスト/確認結果について、compile のみ・unit test・androidTest compile なども明記可とする報告粒度ルールを追加。
-  - `docs/feedback.md` の追記形式として、追記のみ・日付付き導入・最低限含める項目を `AGENTS.md` に明文化。
-- 実行したテスト/確認結果
-  - ドキュメント更新のみのため自動テストは未実施。
-  - `AGENTS.md` の追記内容と `docs/feedback.md` の既存記述が整合することを目視確認。
-- 残課題・次アクション
-  - 今後 `docs/feedback.md` 追記時に、新ルールどおりの見出し/項目構成へ自然に収束するか運用で確認する。
+## 4. 残課題・次アクション
+- 実機またはエミュレータで `.litertlm` モデル選択、初回モデル起動時間、GPU/CPU フォールバック挙動の確認が未実施。
+- LiteRT-LM の `latest.release` 運用は公式推奨に合わせたが、将来的には固定 version への pin を再検討したい。
+- 作業ツリーには `.idea/appInsightsSettings.xml`、`gradle.properties`、`gradle/wrapper/gradle-wrapper.properties` など既存の未関連変更が残っているため、コミット時は切り分け確認が必要。
+
+# 2026-04-12 README への LiteRT-LM モデル利用手順追記
+
+## 1. 変更ファイル一覧
+- `README.md`
+
+## 2. 実施内容
+- README に AIアドバイス機能で使う `.litertlm` モデルの入手元、設定画面での取り込み手順、非自動ダウンロードであること、課金・ライセンス・安全性に関する注意点を追記した。
+
+## 3. 実行したテスト/確認結果
+- 手動確認
+  - `README.md` の追記内容が、現行実装のモデル選択フローと一致することをコード確認で照合した。
+
+## 4. 残課題・次アクション
+- README には一般的な取得元のみ記載しており、採用モデル名や推奨サイズを固定する場合は別途追記が必要。
+- 将来的にアプリ内ダウンロード機能を追加する場合は、README の説明も実装に合わせて更新が必要。
+
+# 2026-04-18 AIアドバイス設定画面の操作性改善
+
+## 1. 変更ファイル一覧
+- `app/src/androidTest/java/jp/hotdrop/simpledyphic/phase8/Phase8UserFlowUiTest.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/AiAdviceSettingsScreen.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/AiAdviceSettingsUiState.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/AiAdviceSettingsViewModel.kt`
+- `app/src/main/res/values/strings.xml`
+
+## 2. 実施内容
+- 生年月日入力を、無効化テキスト欄 + `TextButton` から、値をそのまま押せる全幅 `OutlinedButton` に変更した。
+- `.litertlm` 取り込み中状態を `UiState` で管理し、進行中メッセージ、ボタン無効化、保存無効化を追加した。
+- 大容量モデル取り込みに時間がかかることを画面文言で案内し、androidTest に設定画面の主要導線確認を追加した。
+
+## 3. 実行したテスト/確認結果
+- `./gradlew :app:compileDebugKotlin`
+  - 成功
+- `./gradlew :app:compileDebugAndroidTestKotlin`
+  - 成功
+
+## 4. 残課題・次アクション
+- 現状は「取り込み中」表示のみで、バイト単位の進捗率や残り時間表示は未対応。
+- 大容量モデルの取り込み体験をさらに改善する場合は、進捗付きコピーやキャンセル導線の追加を検討する。

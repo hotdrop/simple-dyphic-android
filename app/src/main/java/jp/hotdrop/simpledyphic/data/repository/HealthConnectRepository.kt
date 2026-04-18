@@ -28,13 +28,19 @@ import jp.hotdrop.simpledyphic.model.appResultSuspend
 import timber.log.Timber
 
 @Singleton
-class HealthConnectRepository @Inject constructor(
+open class HealthConnectRepository @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {
 
-    fun requiredPermissions(): Set<String> = DAILY_SUMMARY_PERMISSIONS
+    open fun requiredPermissions(): Set<String> = DAILY_SUMMARY_PERMISSIONS
 
-    fun getStatus(): HealthConnectStatus {
+    open fun requiredPermissions(metricTypes: Set<HealthMetricType>): Set<String> {
+        return metricTypes.mapTo(linkedSetOf()) { metricType ->
+            METRIC_PERMISSION_MAP.getValue(metricType)
+        }
+    }
+
+    open fun getStatus(): HealthConnectStatus {
         return when (HealthConnectClient.getSdkStatus(context, HEALTH_CONNECT_PROVIDER_PACKAGE)) {
             HealthConnectClient.SDK_AVAILABLE -> HealthConnectStatus.AVAILABLE
             HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> HealthConnectStatus.UPDATE_REQUIRED
@@ -42,7 +48,7 @@ class HealthConnectRepository @Inject constructor(
         }
     }
 
-    suspend fun hasRequiredPermissions(): AppResult<Boolean> {
+    open suspend fun hasRequiredPermissions(): AppResult<Boolean> {
         return appResultSuspend {
             val client = healthConnectClientOrNull() ?: return@appResultSuspend false
             val grantedPermissions = client.permissionController.getGrantedPermissions()
@@ -50,7 +56,15 @@ class HealthConnectRepository @Inject constructor(
         }
     }
 
-    suspend fun getGrantedMetricTypes(): AppResult<Set<HealthMetricType>> {
+    open suspend fun hasPermissions(metricTypes: Set<HealthMetricType>): AppResult<Boolean> {
+        return appResultSuspend {
+            val client = healthConnectClientOrNull() ?: return@appResultSuspend false
+            val grantedPermissions = client.permissionController.getGrantedPermissions()
+            grantedPermissions.containsAll(requiredPermissions(metricTypes))
+        }
+    }
+
+    open suspend fun getGrantedMetricTypes(): AppResult<Set<HealthMetricType>> {
         return appResultSuspend {
             val client = healthConnectClientOrNull() ?: return@appResultSuspend emptySet()
             val grantedPermissions = client.permissionController.getGrantedPermissions()
@@ -60,7 +74,7 @@ class HealthConnectRepository @Inject constructor(
         }
     }
 
-    suspend fun readDailySummary(date: LocalDate): AppResult<DailyHealthSummary> {
+    open suspend fun readDailySummary(date: LocalDate): AppResult<DailyHealthSummary> {
         return appResultSuspend {
             val client = healthConnectClientOrNull() ?: throw IllegalStateException("ヘルスコネクトが利用できません")
             val grantedPermissions = client.permissionController.getGrantedPermissions()
@@ -78,7 +92,7 @@ class HealthConnectRepository @Inject constructor(
         }
     }
 
-    suspend fun readRangeMetrics(start: LocalDate, end: LocalDate): AppResult<List<DailyHealthMetrics>> {
+    open suspend fun readRangeMetrics(start: LocalDate, end: LocalDate): AppResult<List<DailyHealthMetrics>> {
         return appResultSuspend {
             require(!start.isAfter(end)) { "start must be on/before end" }
             val status = getStatus()

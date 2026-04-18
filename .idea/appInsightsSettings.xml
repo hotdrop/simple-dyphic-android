@@ -8,8 +8,8 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="jp.hotdrop.simpledyphic" />
-                  <option name="mobileSdkAppId" value="1:446111817812:android:4aceca1f272274a1ff8dc1" />
+                  <option name="appId" value="jp.hotdrop.simpledyphic.debug" />
+                  <option name="mobileSdkAppId" value="1:446111817812:android:d10e9957d1bd2e05ff8dc1" />
                   <option name="projectId" value="es-dyphic-app" />
                   <option name="projectNumber" value="446111817812" />
                 </ConnectionSetting>

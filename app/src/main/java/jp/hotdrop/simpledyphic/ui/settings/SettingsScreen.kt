@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Note
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material3.AlertDialog
@@ -48,6 +49,7 @@ import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
 @Composable
 fun SettingsRoute(
     onNavigateToWeeklyGoals: () -> Unit,
+    onNavigateToAiAdviceSettings: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -60,6 +62,7 @@ fun SettingsRoute(
         onBackupClick = viewModel::onBackupClick,
         onRestoreClick = viewModel::onRestoreClick,
         onWeeklyGoalSettingsClick = onNavigateToWeeklyGoals,
+        onAiAdviceSettingsClick = onNavigateToAiAdviceSettings,
         onDataSyncActionConfirm = viewModel::onDataSyncActionConfirm,
         onDataSyncActionDismiss = viewModel::onDataSyncActionDismiss
     )
@@ -75,6 +78,7 @@ fun SettingsScreen(
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
     onWeeklyGoalSettingsClick: () -> Unit,
+    onAiAdviceSettingsClick: () -> Unit,
     onDataSyncActionConfirm: () -> Unit,
     onDataSyncActionDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -87,6 +91,7 @@ fun SettingsScreen(
         onBackupClick = onBackupClick,
         onRestoreClick = onRestoreClick,
         onWeeklyGoalSettingsClick = onWeeklyGoalSettingsClick,
+        onAiAdviceSettingsClick = onAiAdviceSettingsClick,
         modifier = modifier
     )
 
@@ -157,6 +162,7 @@ private fun SettingsContent(
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
     onWeeklyGoalSettingsClick: () -> Unit,
+    onAiAdviceSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -206,6 +212,33 @@ private fun SettingsContent(
                         .clickable(
                             enabled = !uiState.isLoading,
                             onClick = onWeeklyGoalSettingsClick
+                        )
+                )
+                HorizontalDivider()
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text(text = stringResource(R.string.ai_settings_entry_title)) },
+                    supportingContent = { Text(text = stringResource(R.string.ai_settings_entry_summary)) },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Outlined.AutoAwesome,
+                            contentDescription = null
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                            contentDescription = null
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("settings_ai_advice_item")
+                        .clickable(
+                            enabled = !uiState.isLoading,
+                            onClick = onAiAdviceSettingsClick
                         )
                 )
                 HorizontalDivider()
@@ -341,6 +374,7 @@ private fun SettingsScreenSignedOutPreview() {
             onBackupClick = {},
             onRestoreClick = {},
             onWeeklyGoalSettingsClick = {},
+            onAiAdviceSettingsClick = {},
             onDataSyncActionConfirm = {},
             onDataSyncActionDismiss = {}
         )
@@ -365,6 +399,7 @@ private fun SettingsScreenSignedInPreview() {
             onBackupClick = {},
             onRestoreClick = {},
             onWeeklyGoalSettingsClick = {},
+            onAiAdviceSettingsClick = {},
             onDataSyncActionConfirm = {},
             onDataSyncActionDismiss = {}
         )
@@ -390,6 +425,7 @@ private fun SettingsScreenBackupConfirmPreview() {
             onBackupClick = {},
             onRestoreClick = {},
             onWeeklyGoalSettingsClick = {},
+            onAiAdviceSettingsClick = {},
             onDataSyncActionConfirm = {},
             onDataSyncActionDismiss = {}
         )

@@ -10,6 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 import jp.hotdrop.simpledyphic.data.local.db.AppDatabase
 import jp.hotdrop.simpledyphic.data.local.db.AppDatabaseMigrations
+import jp.hotdrop.simpledyphic.data.local.db.AppSettingsDao
 import jp.hotdrop.simpledyphic.data.local.db.RecordDao
 import jp.hotdrop.simpledyphic.data.local.db.WeeklyGoalDao
 
@@ -26,6 +27,7 @@ object DatabaseModule {
         )
             .addMigrations(AppDatabaseMigrations.MIGRATION_1_2)
             .addMigrations(AppDatabaseMigrations.MIGRATION_2_3)
+            .addMigrations(AppDatabaseMigrations.MIGRATION_3_4)
             .build()
     }
 
@@ -36,4 +38,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideWeeklyGoalDao(database: AppDatabase): WeeklyGoalDao = database.weeklyGoalDao()
+
+    @Provides
+    @Singleton
+    fun provideAppSettingsDao(database: AppDatabase): AppSettingsDao = database.appSettingsDao()
 }

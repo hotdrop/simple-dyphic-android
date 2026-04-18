@@ -5,14 +5,28 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import jp.hotdrop.simpledyphic.ui.calendar.CalendarScreen
 import jp.hotdrop.simpledyphic.ui.calendar.CalendarUiState
+import jp.hotdrop.simpledyphic.ui.ai.ExerciseAdviceScreen
+import jp.hotdrop.simpledyphic.ui.ai.ExerciseAdviceUiState
 import jp.hotdrop.simpledyphic.ui.record.RecordEditScreen
 import jp.hotdrop.simpledyphic.ui.record.RecordEditUiState
+import jp.hotdrop.simpledyphic.model.AdvicePeriod
+import jp.hotdrop.simpledyphic.model.AppSettings
+import jp.hotdrop.simpledyphic.model.ExerciseAdviceInput
+import jp.hotdrop.simpledyphic.model.ExerciseAdviceRequirement
+import jp.hotdrop.simpledyphic.model.ExerciseMetricKind
+import jp.hotdrop.simpledyphic.model.ExerciseMetricSummary
+import jp.hotdrop.simpledyphic.model.MetricAvailability
 import jp.hotdrop.simpledyphic.ui.settings.SettingsDataSyncAction
+import jp.hotdrop.simpledyphic.ui.settings.AiAdviceSettingsScreen
+import jp.hotdrop.simpledyphic.ui.settings.AiAdviceSettingsUiState
 import jp.hotdrop.simpledyphic.ui.settings.SettingsScreen
 import jp.hotdrop.simpledyphic.ui.settings.SettingsUiState
 import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
@@ -157,6 +171,7 @@ class Phase8UserFlowUiTest {
                         uiState = uiState.copy(pendingDataSyncAction = SettingsDataSyncAction.Restore)
                     },
                     onWeeklyGoalSettingsClick = {},
+                    onAiAdviceSettingsClick = {},
                     onDataSyncActionConfirm = {
                         backupRequested = true
                         uiState = uiState.copy(pendingDataSyncAction = null)
@@ -177,5 +192,101 @@ class Phase8UserFlowUiTest {
         composeTestRule.runOnIdle {
             assertTrue(backupRequested)
         }
+    }
+
+    @Test
+    fun settingsScreen_showsAiAdviceSettingsEntry() {
+        composeTestRule.setContent {
+            SimpleDyphicTheme {
+                SettingsScreen(
+                    uiState = SettingsUiState(
+                        appVersion = "1.0 (1)",
+                        isSignedIn = false
+                    ),
+                    onLicenseClick = {},
+                    onLicenseDismiss = {},
+                    onSignInClick = {},
+                    onSignOutClick = {},
+                    onBackupClick = {},
+                    onRestoreClick = {},
+                    onWeeklyGoalSettingsClick = {},
+                    onAiAdviceSettingsClick = {},
+                    onDataSyncActionConfirm = {},
+                    onDataSyncActionDismiss = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("settings_ai_advice_item").assertIsDisplayed()
+    }
+
+    @Test
+    fun aiAdviceScreen_blocksGenerationWhenRequirementsMissing() {
+        composeTestRule.setContent {
+            SimpleDyphicTheme {
+                ExerciseAdviceScreen(
+                    uiState = ExerciseAdviceUiState(
+                        isLoading = false,
+                        selectedPeriod = AdvicePeriod.WEEKLY,
+                        input = ExerciseAdviceInput(
+                            period = AdvicePeriod.WEEKLY,
+                            periodStartDate = LocalDate.of(2026, 4, 6),
+                            periodEndDate = LocalDate.of(2026, 4, 12),
+                            elapsedDays = 7,
+                            age = null,
+                            settings = AppSettings(),
+                            summaries = listOf(
+                                ExerciseMetricSummary(
+                                    kind = ExerciseMetricKind.STEP_COUNT,
+                                    actualValue = 10000.0,
+                                    availability = MetricAvailability.AVAILABLE
+                                )
+                            ),
+                            missingRequirements = setOf(
+                                ExerciseAdviceRequirement.BIRTH_DATE,
+                                ExerciseAdviceRequirement.MODEL_FILE
+                            ),
+                            promptDataBlock = ""
+                        )
+                    ),
+                    onRetry = {},
+                    onPeriodSelected = {},
+                    onGenerateClick = {},
+                    onRequestPermissionClick = {},
+                    onOpenSettingsClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("ai_advice_generate_button").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("Gemma 4モデルファイル").assertIsDisplayed()
+    }
+
+    @Test
+    fun aiAdviceSettingsScreen_showsBirthDatePrimaryActionAndImportingState() {
+        composeTestRule.setContent {
+            SimpleDyphicTheme {
+                AiAdviceSettingsScreen(
+                    uiState = AiAdviceSettingsUiState(
+                        isLoading = false,
+                        isImportingModel = true,
+                        advisorPrompt = "prompt"
+                    ),
+                    onBack = {},
+                    onBirthDateClick = {},
+                    onBirthDateDismiss = {},
+                    onBirthDateSelected = {},
+                    onHeightChanged = {},
+                    onWeightChanged = {},
+                    onPromptChanged = {},
+                    onPickModelClick = {},
+                    onSaveClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("ai_settings_birth_date_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("ai_settings_pick_model_button").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("モデルをアプリ内へ取り込んでいます。大きなファイルは数分かかることがあります。").assertIsDisplayed()
     }
 }

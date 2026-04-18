@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.2"
+agp = "9.1.0"
 kotlin = "2.2.20"
 coreKtx = "1.17.0"
 composeBom = "2025.09.00"
@@ -23,6 +23,7 @@ androidxTestCore = "1.7.0"
 robolectric = "4.16"
 healthConnect = "1.1.0"
 timber = "5.0.1"
+litertlm = "latest.release"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -62,11 +63,12 @@ androidx-test-core = { group = "androidx.test", name = "core", version.ref = "an
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-health-connect-client = { group = "androidx.health.connect", name = "connect-client", version.ref = "healthConnect" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+litertlm-android = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hiltAndroid" }
-ksp = { id = "com.google.devtools.ksp", version = "2.2.20-2.0.3" }
+ksp = { id = "com.google.devtools.ksp", version = "2.3.2" }
 google-services = { id = "com.google.gms.google-services", version = "4.4.2" }

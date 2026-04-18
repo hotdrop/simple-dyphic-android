@@ -4,13 +4,14 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [RecordEntity::class, WeeklyGoalEntity::class],
-    version = 3,
+    entities = [RecordEntity::class, WeeklyGoalEntity::class, AppSettingsEntity::class],
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun recordDao(): RecordDao
     abstract fun weeklyGoalDao(): WeeklyGoalDao
+    abstract fun appSettingsDao(): AppSettingsDao
 
     companion object {
         const val DATABASE_NAME: String = "simpledyphic.db"
