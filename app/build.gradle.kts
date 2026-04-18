@@ -22,8 +22,8 @@ android {
         applicationId = "jp.hotdrop.simpledyphic"
         minSdk = 34
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.2.0"
+        versionCode = 6
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -85,6 +85,7 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.health.connect.client)
+    implementation(libs.litertlm.android)
     ksp(libs.androidx.room.compiler)
 
     // debug
