@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -147,28 +149,29 @@ fun AiAdviceSettingsScreen(
                             text = stringResource(R.string.ai_settings_description),
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        OutlinedTextField(
-                            value = uiState.birthDate?.format(DateTimeFormatter.ISO_LOCAL_DATE).orEmpty(),
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(text = stringResource(R.string.ai_settings_birth_date_label)) },
-                            placeholder = { Text(text = stringResource(R.string.ai_settings_birth_date_placeholder)) },
-                            trailingIcon = {
+                        Text(
+                            text = stringResource(R.string.ai_settings_birth_date_label),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        OutlinedButton(
+                            onClick = onBirthDateClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("ai_settings_birth_date_button")
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = uiState.birthDate?.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                                        ?: stringResource(R.string.ai_settings_birth_date_placeholder)
+                                )
                                 Icon(
                                     imageVector = Icons.Outlined.AutoAwesome,
                                     contentDescription = null
                                 )
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("ai_settings_birth_date_field"),
-                            enabled = false
-                        )
-                        TextButton(
-                            onClick = onBirthDateClick,
-                            modifier = Modifier.testTag("ai_settings_birth_date_button")
-                        ) {
-                            Text(text = stringResource(R.string.ai_settings_birth_date_pick))
+                            }
                         }
                         OutlinedTextField(
                             value = uiState.heightCmInput,
@@ -216,11 +219,33 @@ fun AiAdviceSettingsScreen(
                             text = uiState.modelFilePath ?: stringResource(R.string.ai_settings_model_path_placeholder),
                             style = MaterialTheme.typography.bodySmall
                         )
+                        if (uiState.isImportingModel) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.testTag("ai_settings_model_import_progress"))
+                                Text(
+                                    text = stringResource(R.string.ai_settings_model_importing_detail),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = stringResource(R.string.ai_settings_model_import_hint),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                         Button(
                             onClick = onPickModelClick,
+                            enabled = !uiState.isImportingModel && !uiState.isSaving,
                             modifier = Modifier.testTag("ai_settings_pick_model_button")
                         ) {
-                            Text(text = stringResource(R.string.ai_settings_pick_model))
+                            if (uiState.isImportingModel) {
+                                CircularProgressIndicator(modifier = Modifier.padding(vertical = 4.dp))
+                            } else {
+                                Text(text = stringResource(R.string.ai_settings_pick_model))
+                            }
                         }
                     }
                 }
@@ -260,7 +285,7 @@ fun AiAdviceSettingsScreen(
             item {
                 Button(
                     onClick = onSaveClick,
-                    enabled = !uiState.isSaving,
+                    enabled = !uiState.isSaving && !uiState.isImportingModel,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("ai_settings_save_button")
@@ -343,6 +368,8 @@ private fun AiAdviceSettingsSavingPreview() {
         AiAdviceSettingsScreen(
             uiState = AiAdviceSettingsUiState(
                 isLoading = false,
+                isImportingModel = true,
+                modelDisplayName = "gemma-4-E2B-it.litertlm",
                 isSaving = true,
                 advisorPrompt = AppSettingsPreviewPrompt
             ),

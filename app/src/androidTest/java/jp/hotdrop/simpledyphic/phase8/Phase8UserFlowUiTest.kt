@@ -25,6 +25,8 @@ import jp.hotdrop.simpledyphic.model.ExerciseMetricKind
 import jp.hotdrop.simpledyphic.model.ExerciseMetricSummary
 import jp.hotdrop.simpledyphic.model.MetricAvailability
 import jp.hotdrop.simpledyphic.ui.settings.SettingsDataSyncAction
+import jp.hotdrop.simpledyphic.ui.settings.AiAdviceSettingsScreen
+import jp.hotdrop.simpledyphic.ui.settings.AiAdviceSettingsUiState
 import jp.hotdrop.simpledyphic.ui.settings.SettingsScreen
 import jp.hotdrop.simpledyphic.ui.settings.SettingsUiState
 import jp.hotdrop.simpledyphic.ui.theme.SimpleDyphicTheme
@@ -258,5 +260,33 @@ class Phase8UserFlowUiTest {
 
         composeTestRule.onNodeWithTag("ai_advice_generate_button").assertIsNotEnabled()
         composeTestRule.onNodeWithText("Gemma 4モデルファイル").assertIsDisplayed()
+    }
+
+    @Test
+    fun aiAdviceSettingsScreen_showsBirthDatePrimaryActionAndImportingState() {
+        composeTestRule.setContent {
+            SimpleDyphicTheme {
+                AiAdviceSettingsScreen(
+                    uiState = AiAdviceSettingsUiState(
+                        isLoading = false,
+                        isImportingModel = true,
+                        advisorPrompt = "prompt"
+                    ),
+                    onBack = {},
+                    onBirthDateClick = {},
+                    onBirthDateDismiss = {},
+                    onBirthDateSelected = {},
+                    onHeightChanged = {},
+                    onWeightChanged = {},
+                    onPromptChanged = {},
+                    onPickModelClick = {},
+                    onSaveClick = {}
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("ai_settings_birth_date_button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("ai_settings_pick_model_button").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("モデルをアプリ内へ取り込んでいます。大きなファイルは数分かかることがあります。").assertIsDisplayed()
     }
 }

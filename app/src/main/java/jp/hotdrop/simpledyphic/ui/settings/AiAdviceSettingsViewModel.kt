@@ -66,18 +66,27 @@ class AiAdviceSettingsViewModel @Inject constructor(
     }
 
     fun onPickModelClick() {
+        if (_uiState.value.isSaving || _uiState.value.isImportingModel) return
         launch {
             _effects.send(AiAdviceSettingsEffect.OpenModelPicker)
         }
     }
 
     fun onModelSelected(uri: Uri) {
-        if (_uiState.value.isSaving) return
+        if (_uiState.value.isSaving || _uiState.value.isImportingModel) return
+        _uiState.update {
+            it.copy(
+                isImportingModel = true,
+                errorMessageResId = null,
+                messageResId = R.string.ai_settings_model_importing
+            )
+        }
         launch {
             when (val result = dispatcherIO { appSettingsRepository.importModelFile(uri) }) {
                 is AppResult.Success -> {
                     _uiState.update {
                         it.copy(
+                            isImportingModel = false,
                             modelDisplayName = result.value.displayName,
                             modelFilePath = result.value.absolutePath,
                             errorMessageResId = null,
@@ -89,6 +98,7 @@ class AiAdviceSettingsViewModel @Inject constructor(
                     Timber.e(result.error, "Failed to import LiteRT-LM model file")
                     _uiState.update {
                         it.copy(
+                            isImportingModel = false,
                             errorMessageResId = R.string.ai_settings_error_model_import_failed,
                             messageResId = null
                         )
@@ -99,7 +109,7 @@ class AiAdviceSettingsViewModel @Inject constructor(
     }
 
     fun onSaveClick() {
-        if (_uiState.value.isSaving) return
+        if (_uiState.value.isSaving || _uiState.value.isImportingModel) return
         val heightValue = parseOptionalPositiveDouble(_uiState.value.heightCmInput)
         if (heightValue is ParsedNumber.Invalid) {
             _uiState.update {
@@ -136,6 +146,7 @@ class AiAdviceSettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isSaving = false,
+                            isImportingModel = false,
                             messageResId = R.string.ai_settings_message_saved
                         )
                     }
@@ -145,6 +156,7 @@ class AiAdviceSettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isSaving = false,
+                            isImportingModel = false,
                             errorMessageResId = R.string.ai_settings_error_save_failed
                         )
                     }
@@ -162,6 +174,7 @@ class AiAdviceSettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
+                            isImportingModel = false,
                             birthDate = settings.birthDate,
                             heightCmInput = settings.heightCm?.toString().orEmpty(),
                             weightKgInput = settings.weightKg?.toString().orEmpty(),
@@ -178,6 +191,7 @@ class AiAdviceSettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
+                            isImportingModel = false,
                             errorMessageResId = R.string.ai_settings_error_load_failed
                         )
                     }

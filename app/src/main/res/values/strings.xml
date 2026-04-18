@@ -121,6 +121,9 @@
     <string name="ai_settings_model_not_selected">モデルはまだ選択されていません。</string>
     <string name="ai_settings_model_path_placeholder">モデルパス未設定</string>
     <string name="ai_settings_pick_model">.litertlm ファイルを選択</string>
+    <string name="ai_settings_model_importing">Gemma 4 モデルを取り込み中です。</string>
+    <string name="ai_settings_model_importing_detail">モデルをアプリ内へ取り込んでいます。大きなファイルは数分かかることがあります。</string>
+    <string name="ai_settings_model_import_hint">大きな `.litertlm` ファイルは取り込みに数分かかることがあります。</string>
     <string name="ai_settings_prompt_label">アドバイス指示文</string>
     <string name="ai_settings_save">保存</string>
     <string name="ai_settings_error_load_failed">AIアドバイス設定の読み込みに失敗しました。</string>

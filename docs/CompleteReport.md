@@ -73,3 +73,27 @@
 ## 4. 残課題・次アクション
 - README には一般的な取得元のみ記載しており、採用モデル名や推奨サイズを固定する場合は別途追記が必要。
 - 将来的にアプリ内ダウンロード機能を追加する場合は、README の説明も実装に合わせて更新が必要。
+
+# 2026-04-18 AIアドバイス設定画面の操作性改善
+
+## 1. 変更ファイル一覧
+- `app/src/androidTest/java/jp/hotdrop/simpledyphic/phase8/Phase8UserFlowUiTest.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/AiAdviceSettingsScreen.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/AiAdviceSettingsUiState.kt`
+- `app/src/main/java/jp/hotdrop/simpledyphic/ui/settings/AiAdviceSettingsViewModel.kt`
+- `app/src/main/res/values/strings.xml`
+
+## 2. 実施内容
+- 生年月日入力を、無効化テキスト欄 + `TextButton` から、値をそのまま押せる全幅 `OutlinedButton` に変更した。
+- `.litertlm` 取り込み中状態を `UiState` で管理し、進行中メッセージ、ボタン無効化、保存無効化を追加した。
+- 大容量モデル取り込みに時間がかかることを画面文言で案内し、androidTest に設定画面の主要導線確認を追加した。
+
+## 3. 実行したテスト/確認結果
+- `./gradlew :app:compileDebugKotlin`
+  - 成功
+- `./gradlew :app:compileDebugAndroidTestKotlin`
+  - 成功
+
+## 4. 残課題・次アクション
+- 現状は「取り込み中」表示のみで、バイト単位の進捗率や残り時間表示は未対応。
+- 大容量モデルの取り込み体験をさらに改善する場合は、進捗付きコピーやキャンセル導線の追加を検討する。
